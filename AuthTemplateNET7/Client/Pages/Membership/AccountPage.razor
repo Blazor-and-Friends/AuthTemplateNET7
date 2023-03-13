@@ -1,0 +1,18 @@
+﻿@page "/membership/account"
+@attribute [Authorize]
+
+<PageTitleAndHeader Title="My account" />
+
+@{
+    //can't think of a better way to handle customer links
+}
+<AuthorizeView Roles="Customer">
+    <a href="customers/my-orders">My orders</a>
+    <br />
+</AuthorizeView>
+
+<a href="membership/my-logins">My logins</a>
+
+@code {
+    //added
+}

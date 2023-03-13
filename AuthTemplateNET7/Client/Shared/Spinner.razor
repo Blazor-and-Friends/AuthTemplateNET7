@@ -1,0 +1,71 @@
+﻿@if (showSpinner)
+{
+    <div class="@viewportMaskCss">
+        <div class="c-fixed-center-center">
+            <div class="d-flex flex-wrap flex-column justify-content-center align-items-center">
+                <span class="spinner-border" role="status"></span>
+                <span class="ms-3">@msg</span>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    //added
+
+    /*
+    * For when a page needs to load data during initialization or when a user is submitting a form
+    *
+    * Keep it in the shared folder because a page will often enough need to load data, thus need a spinner
+    */
+
+    /// <summary>
+    /// Optional. If true, the viewport is masked, disabling the user's ability to interact with tye page. Default is false.
+    /// </summary>
+    [Parameter] public bool MaskViewport { get; set; }
+
+    /// <summary>
+    /// Optional. The message to be shown while the Spinner is visible. Default is "Loading..."
+    /// </summary>
+    [Parameter] public string Message { get; set; } = "Loading...";
+
+    /// <summary>
+    /// Optional. If true, the spinner is automatically shown when a page loads. Default is true
+    /// </summary>
+    [Parameter] public bool ShowWhenInitizialed { get; set; } = true;
+
+    string msg;
+    bool showSpinner;
+    string viewportMaskCss;
+
+    /// <summary>
+    /// Hides the spinner
+    /// </summary>
+    public void HideSpinner()
+    {
+        showSpinner = false;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Shows a spinner in the center of the page.
+    /// </summary>
+    /// <param name="message">Optional. The message you want to display to the user. Default is "Loading..."</param>
+    /// <param name="maskViewport">Whether or not you want to disable interaction with the webpage while the spinner is being displayed. This can be set once with the MaskViewport parameter and ignored here if you'll always do one or the other.</param>
+    public void ShowSpinner(string message = "Loading...", bool maskViewport = true)
+    {
+        if (maskViewport) viewportMaskCss = "c-viewport-mask";
+        else viewportMaskCss = "";
+
+        msg = message;
+        showSpinner = true;
+        StateHasChanged();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (MaskViewport) viewportMaskCss = "c-viewport-mask";
+        if (ShowWhenInitizialed) showSpinner = true;
+        msg = Message;
+    }
+}

@@ -1,0 +1,69 @@
+﻿@implements IDisposable
+@inject IJSRuntime js_
+
+<div id="eyeballs">
+    <img src="/eyesresources/whites.gif" />
+</div>
+<div id="lefteye">
+    <img src="/eyesresources/pupil.gif" />
+</div>
+<div id="righteye">
+    <img src="/eyesresources/pupil.gif" />
+</div>
+
+@if (PlaySong)
+{
+    <div class="@showHideCss">
+        <iframe width="@Width" height="@height" src="https://www.youtube-nocookie.com/embed/7YvAYIJSSZY?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    </div>
+}
+
+
+@code {
+    //added
+
+    /*
+    * A pair of eyes that follow your mouse pointer
+     */
+
+    [Parameter] public bool PlaySong { get; set; } = true;
+
+    [Parameter] public bool ShowVideo { get; set; } = true;
+
+    [Parameter] public int Width { get; set; } = 50;
+
+    int height;
+
+    string showHideCss = "visually-hidden";
+
+    IJSObjectReference module;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await js_.InvokeAsync<IJSObjectReference>("import", "./FunComponents/Eyes.razor.js");
+
+            double ratio = .5625;
+            height = (int)(Width * ratio);
+
+            if (ShowVideo)
+            {
+                showHideCss = "";
+                StateHasChanged();
+            }
+
+            //for some reason the await above doesn't wait
+            while (module == null) await Task.Delay(10);
+
+            await module.InvokeVoidAsync("setHandlers");
+
+            if (ShowVideo) showHideCss = "";
+        }
+    }
+
+    public async void Dispose()
+    {
+        await module.InvokeVoidAsync("clearEyes");
+    }
+}

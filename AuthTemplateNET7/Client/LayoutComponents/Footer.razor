@@ -1,0 +1,40 @@
+﻿@using AuthTemplateNET7.Client.Components
+
+<footer class="pt-2 mt-2">
+    <Hr Width="75" />
+
+    <div class="d-flex flex-wrap justify-content-center gap-3 mt-2">
+        <a href="/contact">Contact</a>
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy</a>
+        <a href="" @onclick="showJoinEmailList" @onclick:preventDefault>Join our email list</a>
+    </div>
+
+    <div class="d-flex justify-content-center mt-3">
+        <span>&copy; @copyrightYears</span>
+    </div>
+</footer>
+
+
+
+@code {
+    //added
+
+    int firstYear = 2023;
+    int currYear = DateTime.Today.Year;
+    string copyrightYears;
+
+    [CascadingParameter] public JoinEmailList joinEmailList { get; set; }
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (firstYear == currYear) copyrightYears = firstYear.ToString();
+        else copyrightYears = $"{firstYear} - {currYear}";
+    }
+
+    async Task showJoinEmailList()
+    {
+        await joinEmailList.ShowAsync("Join email list link in footer");
+    }
+}

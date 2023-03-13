@@ -1,0 +1,101 @@
+﻿@page "/dev/schedule-manager"
+@using AuthTemplateNET7.Client.Components
+@attribute [Authorize(Roles = "Dev")]
+@inject HttpClient client_
+
+<PageTitleAndHeader Title="Schedule manager" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftDev />
+    </LeftPane>
+    <MainContent>
+        <fieldset>
+            <legend>Tasks</legend>
+            <div class="@css">
+                <label class="fw-bold me-3">Message:</label>@resultMsg.ToMarkupString()
+            </div>
+
+            @if (showGuidNotChanged)
+            {
+                <div>
+                    <code>Server.Controllers.ScheduledController.Hourly(string guid)</code> expects a string that it gets from the section <code>SiteSettings:ScheduledSettings:Guid</code> in <code>appsettings.json</code> that is not "change-this-string-to-something-unique".
+                </div>
+            }
+
+            @{
+#pragma warning disable CSS024
+            }
+            <button @onclick="runHourlyTasks"
+                    disabled="@showGuidNotChanged"
+                    class="btn btn-primary mt-3"
+                    style="@btnStyle">
+                Run hourly tasks
+            </button>
+            @{
+#pragma warning restore CSS024
+            }
+        </fieldset>
+    </MainContent>
+</SplitContainer>
+
+
+
+@code {
+    //added
+
+    string btnStyle;
+    string css = "";
+    string guidStr;
+    string resultMsg = "N/A";
+    bool showGuidNotChanged;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //we don't want to expose this in the client WASM
+        var response = await client_.GetAsync("api/dev/get-scheduled-controller-guid");
+
+        if(response.IsSuccessStatusCode)
+        {
+            var contentStr = await response.Content.ReadAsStringAsync();
+            if (contentStr == "change-this-string-to-something-unique")
+            {
+                //bootstrap sets pointer-events to none on disabled buttons, which means it can't get the "not-allowed" pointer for the cursor
+                btnStyle = "cursor: not-allowed; pointer-events: all;";
+                resultMsg = "Need to change the <code>SiteSettings:ScheduledSettings:Guid</code> in <code>appsettings.json</code> to something unique, like a Guid";
+                css = "text-danger";
+                showGuidNotChanged = true;
+            }
+            else
+            {
+                guidStr = contentStr;
+            }
+        }
+        else
+        {
+            resultMsg = "There was an issue fetching <code>SiteSettings:ScheduledSettings:Guid</code> from <code>appsettings.json</code>. You need this to run any maintenance.";
+            css = "text-danger";
+        }
+    }
+
+    async Task runHourlyTasks()
+    {
+        var response = await client_.GetAsync($"dev/scheduled/hourly/{guidStr}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            resultMsg = "Hourly tasks ran successfully";
+            css = "text-success";
+        }
+        else
+        {
+            var contentStr = await response.Content.ReadAsStringAsync();
+
+            if (contentStr == "Guid not changed") showGuidNotChanged = true;
+
+            resultMsg = $"The server responded with a {(int)response.StatusCode} status code. Reason: {contentStr}.";
+            css = "text-danger";
+            showGuidNotChanged = true;
+        }
+    }
+}

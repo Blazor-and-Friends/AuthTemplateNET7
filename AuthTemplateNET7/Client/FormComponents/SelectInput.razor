@@ -1,0 +1,131 @@
+﻿@using AuthTemplateNET7.Client.FormComponents.Internals
+@typeparam T
+@inherits SelectBase<T>
+
+<div class="mb-3">
+    <LableHelper InputId="@id" LabelText="@DisplayName" Required="Required" />
+
+    <select
+        @attributes="AdditionalAttributes"
+        @bind="CurrentValueAsString"
+        class="@getClassList(true) @CssClass"
+        id="@id">
+
+        <option disabled="@Required" selected="@firstOptionSelected" value="@firstOptionValue">
+            @Placeholder
+        </option>
+
+        @OptionElements
+    </select>
+
+    @if (ValidationFor != null)
+    {
+        <ValidationMessage For="ValidationFor" />
+    }
+    @if (FormText != null)
+    {
+        <div class="form-text ms-2">
+            @FormText
+        </div>
+    }
+</div>
+
+@code {
+    //added
+
+    /*
+    * Works with int, int?, long, long?, Guid, Guid? For enums, use SelectEnumInput
+    * @attributes needs to be placed first to overide the supplied attributes
+    * adapted from https://github.com/chrissainty/BuildingCustomInputComponentsForBlazorUsingInputBase/blob/master/Blazor.App/Shared/CustomInputSelect.razor
+    */
+
+    /// <summary>
+    /// The option elements.
+    /// </summary>
+    [EditorRequired, Parameter] public RenderFragment OptionElements { get; set; }
+
+    void setFirstOptionSelected()
+    {
+        if (string.IsNullOrEmpty(CurrentValueAsString))
+        {
+            firstOptionSelected = true;
+        }
+        else if (int.TryParse(CurrentValueAsString, out var _int))
+        {
+            if (_int == default(int))
+            {
+                firstOptionSelected = true;
+                firstOptionValue = "0";
+            }
+
+        }
+        else if(Guid.TryParse(CurrentValueAsString, out var _guid))
+        {
+            if (_guid == Guid.Empty)
+            {
+                firstOptionSelected = true;
+                firstOptionValue = Guid.Empty.ToString();
+            }
+        }
+        else if (long.TryParse(CurrentValueAsString, out var _long))
+        {
+            if (_long == default(long))
+            {
+                firstOptionSelected = true;
+                firstOptionValue = "0";
+            }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        setFirstOptionSelected(); //determine whether or not the first option element should have the "selected" attribute
+        base.OnInitialized();
+    }
+
+    protected override bool TryParseValueFromString(string value, out T result, out string validationErrorMessage)
+    {
+        validationErrorMessage = null;
+
+        Console.WriteLine("tpvfs: " + value);
+
+        if (string.IsNullOrEmpty(value)) //if a null is coming in, gotta be null no?
+        {
+            result = (T)(object)null;
+            return true;
+        }
+
+        if (type == typeof(int) || type == typeof(int?))
+        {
+            if (int.TryParse(value, out var _result))
+            {
+                result = (T)(object)_result;
+                return true;
+            }
+        }
+
+        //use else if's because we're not doing anything if the TryParse's fail
+        else if(type == typeof(Guid) || type == typeof(Guid?))
+        {
+            if(Guid.TryParse(value, out var _result))
+            {
+                result = (T)(object)_result;
+                return true;
+            }
+        }
+        else if(type == typeof(long) || type == typeof(long?))
+        {
+            if (long.TryParse(value, out var _result))
+            {
+                result = (T)(object)_result;
+            }
+        }
+        else if(type == typeof(string))
+        {
+            result = (T)(object)value;
+            return true;
+        }
+
+        throw new InvalidOperationException($"{GetType()} does not support the type '{typeof(T)}'.");
+    }
+}

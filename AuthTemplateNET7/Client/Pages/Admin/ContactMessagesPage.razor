@@ -1,0 +1,270 @@
+﻿@page "/admin/contact-messages"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient client_
+@inject NavigationManager nav_
+
+<Spinner @ref="spinner" ShowWhenInitizialed="false" />
+<ConfirmDialog @ref="confirmDialog" />
+
+<PageTitleAndHeader Title="Contact messages" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftAdmin />
+    </LeftPane>
+
+    <MainContent>
+
+        @if (messages != null)
+        {
+            <div class="d-flex justify-content-center">
+
+                @if(messages.Count == 0)
+                {
+                    <div>
+                        No contact messages
+                    </div>
+                }
+
+                <table cellpadding="6">
+                    <thead>
+                        <tr>
+                            <th colspan="6">
+                                <button @onclick="saveChanges" class="btn btn-outline-primary me-3">
+                                    Save changes
+                                </button>
+
+                                <button @onclick="deleteAllExceptSaved" class="btn btn-outline-danger">
+                                    Delete all except saved
+                                </button>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in messages)
+                        {
+                            string address = item.EmailAddress;
+                            string na = "N/A";
+                            string notGiven = "Not given";
+                            string phone = item.Phone;
+                            string radioName = "Disposition-" + item.Id;
+                            bool showPreferred = address != null || phone != null;
+                            string subject = string.IsNullOrWhiteSpace(item.Subject) ? "Not given" : item.Subject;
+                            <tr>
+                                <th>Disposition</th>
+                                <th>Name</th>
+                                <th>Prefer</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Email list?</th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    @switch (item.Disposition)
+                                    {
+                                        //hack need to check into the 7 get/set thingy. This is the only way I could get this to work properly in a loop
+                                        case Disposition.AutoDelete:
+                                            <input checked type="radio" name="@radioName"
+                                                class="cursor-pointer me-2" title="Auto delete"
+                                                @onchange="@(() => dispositionChanged(item, Disposition.AutoDelete))" />
+
+                                            <input type="radio" name="@radioName"
+                                                class="cursor-pointer me-2" title="Delete now"
+                                                @onchange="@(() => dispositionChanged(item, Disposition.DeleteNow))" />
+
+                                            <input type="radio" name="@radioName"
+                                                class="cursor-pointer" title="Save"
+                                                @onchange="@(() => dispositionChanged(item, Disposition.Save))" />
+                                            break;
+
+
+                                        case Disposition.DeleteNow:
+
+                                            <input type="radio" name="@radioName"
+                                                class="cursor-pointer me-2" title="Auto delete"
+                                                @onchange="@(() => dispositionChanged(item, Disposition.AutoDelete))" />
+
+                                            <input checked type="radio" name="@radioName"
+                                                class="cursor-pointer me-2" title="Delete now"
+                                                @onchange="@(() => dispositionChanged(item, Disposition.DeleteNow))" />
+
+                                            <input type="radio" name="@radioName"
+                                                class="cursor-pointer" title="Save"
+                                                @onchange="@(() => dispositionChanged(item, Disposition.Save))" />
+                                            break;
+
+
+                                        case Disposition.Save:
+                                            <input type="radio" name="@radioName"
+                                                class="cursor-pointer me-2" title="Auto delete"
+                                                @onchange="@(() => dispositionChanged(item, Disposition.AutoDelete))" />
+
+                                            <input type="radio" name="@radioName"
+                                                class="cursor-pointer me-2" title="Delete now"
+                                                @onchange="@(() => dispositionChanged(item, Disposition.DeleteNow))" />
+
+                                            <input checked type="radio" name="@radioName"
+                                                class="cursor-pointer" title="Save"
+                                                @onchange="@(() => dispositionChanged(item, Disposition.Save))" />
+                                            break;
+                                    }
+                                    <br />
+                                    @item.DispositionLabel
+                                </td>
+                                <td class="min-width-max-content align-text-top">@item.Fullname</td>
+                                <td class="align-text-top">
+                                    @if (showPreferred)
+                                    {
+                                        <span>@item.PreferredContactMethod</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@na</span>
+                                    }
+                                </td>
+                                <td class="align-text-top">
+                                    @if (address != null)
+                                    {
+                                        @address.ToEmailLink()
+                                    }
+                                    else
+                                    {
+                                        <span>@notGiven</span>
+                                    }
+                                </td>
+                                <td class="align-text-top">
+                                    @if (phone != null)
+                                    {
+                                        <a href="tel:@phone">@phone</a>
+                                    }
+                                    else
+                                    {
+                                        <span>@notGiven</span>
+                                    }
+                                </td>
+                                <td class="align-text-top">
+                                    <input type="checkbox" @bind="item.AddToEmailList" disabled class="cursor-not-allowed" />
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th class="text-end">Date</th>
+                                <td colspan="5">@item.DateTime.ToString("HH:mm 'UTC - ' dd MMM yyyy")</td>
+                            </tr>
+
+                            <tr>
+                                <th class="align-text-top text-end">Subject</th>
+                                <td colspan="5">
+                                    @subject
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="align-text-top text-end">Message</th>
+                                <td colspan="5">
+                                    <pre class="white-space-pre-wrap">@item.Message</pre>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="6">
+                                    <Hr />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="7">
+                                <button @onclick="saveChanges" class="btn btn-outline-primary">
+                                    Save changes
+                                </button>
+
+                                <button @onclick="deleteAllExceptSaved" class="btn btn-outline-danger">
+                                    Delete all except saved
+                                </button>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+        else
+        {
+            <Spinner />
+        }
+    </MainContent>
+</SplitContainer>
+
+@code {
+    //added
+    ConfirmDialog confirmDialog;
+    List<ContactMessage> messages;
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+    Spinner spinner;
+
+    async Task deleteAllExceptSaved()
+    {
+        var yes = await confirmDialog.ConfirmAsync(htmlMessage: "Are you sure you want to delete all except saved?", title: "Confirm Delete");
+
+        if (!yes) return;
+
+        foreach (var item in messages)
+        {
+            if (item.Disposition != Disposition.Save) item.Disposition = Disposition.DeleteNow;
+        }
+
+        await saveChanges();
+    }
+
+    void dispositionChanged(ContactMessage item, Disposition disposition)
+    {
+        item.Disposition = disposition;
+        item.DispositionLabel = ContactMessage.Labels[(int)disposition];
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        while (spinner == null) await Task.Delay(10);
+        spinner.ShowSpinner(maskViewport: false);
+        messages = await client_.GetFromJsonAsync<List<ContactMessage>>("api/admin/get-contact-messages");
+        spinner.HideSpinner();
+    }
+
+    async Task saveChanges()
+    {
+        spinner.ShowSpinner("Updating messages...");
+        List<ContactMessage> changed = new(messages.Count);
+
+        foreach (var item in messages)
+        {
+            if (item.Disposition == Disposition.DeleteNow)
+            {
+                changed.Add(item);
+            }
+            else if(item.Disposition == Disposition.Save && !item.SaveMessage)
+            {
+                changed.Add(item);
+            }
+            else if(item.Disposition == Disposition.AutoDelete && item.SaveMessage)
+            {
+                changed.Add(item);
+            }
+        }
+
+        var response = await client_.PostAsJsonAsync<List<ContactMessage>>("api/admin/update-contact-messages", changed);
+
+        var contentStr = await response.Content.ReadAsStringAsync();
+
+        spinner.HideSpinner();
+
+        if (response.IsSuccessStatusCode)
+        {
+            notificationService.Notify(contentStr);
+            nav_.NavigateTo("admin/dashboard");
+        }
+        else
+        {
+            notificationService.NotifyError(contentStr);
+        }
+    }
+}

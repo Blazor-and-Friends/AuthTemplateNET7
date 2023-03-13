@@ -1,0 +1,16 @@
+﻿<div class="d-flex flex-wrap-reverse gap-3">
+    <div class="min-width-max-content">
+        @LeftPane
+    </div>
+    <div class="flex-grow-1">
+        @MainContent
+    </div>
+</div>
+
+@code{
+    //added
+
+    [EditorRequired, Parameter] public RenderFragment LeftPane { get; set; }
+
+    [EditorRequired, Parameter] public RenderFragment MainContent { get; set; }
+}

@@ -1,0 +1,35 @@
+﻿@page "/unsubscribe/{guid}"
+@inject HttpClient client_
+
+<PageTitleAndHeader Title="Unsubscribe" />
+
+@if(ready)
+{
+    <p class="text-center">You have been unsubscribed.</p>
+}
+else if(error)
+{
+    <p class="text-danger">There was a problem unsubscribing you. This issue has been logged and we will unsubscribe you manually.</p>
+}
+else
+{
+    <Spinner />
+}
+
+@code {
+    [Parameter] public string Guid { get; set; }
+
+    bool error;
+    bool ready;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await client_.GetAsync($"api/emailing/unsubscribe/{Guid}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            ready = true;
+        }
+        else error = true;
+    }
+}

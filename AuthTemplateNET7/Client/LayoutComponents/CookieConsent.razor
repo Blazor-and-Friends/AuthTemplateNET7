@@ -1,0 +1,55 @@
+﻿@inject IJSRuntime js_
+
+@if (UseCookieConsent)
+{
+    <div class="c-cookie-consent-container alert alert-info @displayCss" role="alert" tabindex="-1">
+        <div class="d-flex flex-wrap justify-content-between gap-3">
+            <div>Privacy. In DEBUG mode, this will pop up every couple days as a reminder to set up your privacy policy. You can change that in <code>LayoutComponents.CookieConsent.OnInitializedAsync()</code>.</div>
+            <div>
+                <button type="button" @onclick="dismiss" class="btn btn-close"></button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    //added
+
+    [EditorRequired, Parameter] public bool UseCookieConsent { get; set; }
+
+    const string KEY = "COOKIE_CONSENT_LAST_SEEN";
+    const int MONTHS_BETWEEN_CONFIRMATIONS = 6;
+
+    string displayCss = "d-none";
+
+    async Task dismiss()
+    {
+        await js_.InvokeVoidAsync("tf.setItem", KEY, DateTime.Today.ToString("yyyy-MM-dd"));
+        displayCss = "d-none";
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!UseCookieConsent) return;
+
+        bool displayCookieConsent = true;
+
+        //tryparse because it may be null
+        if (DateTime.TryParse(
+            await js_.InvokeAsync<string>("tf.getItem", KEY),
+            out DateTime lastDisplayedDate))
+        {
+#if DEBUG
+    DateTime sixMonthsAgo = DateTime.Today.AddDays(-2); //so you don't click off the cookie consent and push the default message into production
+#else
+            DateTime sixMonthsAgo = DateTime.Today
+                .AddMonths(-MONTHS_BETWEEN_CONFIRMATIONS);
+#endif
+
+
+            if (lastDisplayedDate > sixMonthsAgo) displayCookieConsent = false;
+        }
+
+        if (displayCookieConsent) displayCss = "d-block";
+    }
+}

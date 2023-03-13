@@ -1,0 +1,107 @@
+﻿@page "/membership/login"
+@using AuthTemplateNET7.Client.FormComponents
+@using AuthTemplateNET7.Shared.Dtos.Membership
+@inject HttpClient httpClient_
+@inject IJSRuntime js_
+@inject NavigationManager nav_
+
+<PageTitleAndHeader Title="Log in" />
+<EditFormWrapper Model="loginDto" OnValidSubmit="validSubmit" SubmitButtonText="Log in">
+
+    <FormFactory Model="loginDto" />
+
+    <PasswordInput DisplayName="Password" @bind-Value="loginDto.Password" Required="true" ValidationFor="() => loginDto.Password" />
+
+    @if(isInvalidLogin)
+    {
+        <h3 class="text-danger">Invalid email address or password.</h3>
+    }
+</EditFormWrapper>
+<a href="/membership/forgot-password" class="mt-2">Forgot password?</a>
+
+<div>
+
+@{
+    #if DEBUG
+}
+    @if (loginNameAndEmailDebugs is not null)
+    {
+        <fieldset>
+            <legend>Available members</legend>
+            <div>Click to update log in form</div>
+            <table cellpadding="3">
+                <tr>
+                    <th>Display name</th>
+                    <th>Roles</th>
+                </tr>
+                @foreach (var item in loginNameAndEmailDebugs)
+                {
+                <tr>
+                    <td>
+                        <button type="button" @onclick="() => changeMember(item)" class="btn btn-link">@item.DisplayName</button>
+                    </td>
+                    <td>
+                        @foreach (var role in item.Roles)
+                        {
+                            <span class="ms-2">@role</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </table>
+
+
+        </fieldset>
+    }
+@{
+    #endif
+}
+</div>
+
+@code {
+    //added
+
+    [Parameter, SupplyParameterFromQuery] public string ReturnUrl { get; set; }
+
+    bool isInvalidLogin;
+    LoginDto loginDto = new();
+
+    async Task invalidSubmit()
+    {
+        await js_.InvokeVoidAsync("tf.scrollToElementById", "login-form");
+    }
+
+#if DEBUG
+    LoginNameAndEmailDebug[] loginNameAndEmailDebugs;
+    string password = "helloDollyHowYeBe1!"; //in Server.Seeding.MembersSeeder, the password is the same for everone
+    protected override async Task  OnInitializedAsync()
+    {
+    loginDto.Email = "franki@valli.com";
+    loginDto.Password = password;
+
+     var result = await httpClient_.GetFromJsonAsync<LoginNameAndEmailDebug[]>("api/membership/get-member-emails");
+
+     if(result is not null) loginNameAndEmailDebugs = result;
+    }
+
+    void changeMember(LoginNameAndEmailDebug model)
+    {
+        loginDto.Email = model.Email;
+    }
+#endif
+
+    async Task validSubmit()
+    {
+        //await Task.Delay(2000); //to see what it does
+        var result = await httpClient_.PostAsJsonAsync<LoginDto>("/api/membership/login", loginDto);
+
+        if(result.IsSuccessStatusCode)
+        {
+            nav_.NavigateTo(ReturnUrl, forceLoad: true); //to set the auth cookie from the server
+        }
+        else
+        {
+            isInvalidLogin = true;
+        }
+    }
+}

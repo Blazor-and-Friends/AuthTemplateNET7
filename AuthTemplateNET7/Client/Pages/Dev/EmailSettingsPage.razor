@@ -1,0 +1,53 @@
+﻿@page "/dev/email-settings"
+@using AuthTemplateNET7.Shared.PublicModels.SiteSettingModels.Models.DevSettings;
+@attribute [Authorize(Roles = "Dev")]
+@inject HttpClient client_
+@inject NavigationManager nav_
+
+<PageTitleAndHeader Title="Email Settings" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftDev />
+    </LeftPane>
+
+    <MainContent>
+        @if(emailSettings != null)
+        {
+            <EditFormWrapper Model="emailSettings" OnValidSubmit="validSubmit" SubmitButtonText="Update email settings">
+                <FormFactory Model="emailSettings" />
+            </EditFormWrapper>
+        }
+        else
+        {
+            <Spinner />
+        }
+    </MainContent>
+</SplitContainer>
+
+@code {
+    //added
+
+    EmailSettings emailSettings;
+    [CascadingParameter]public NotificationService notificationService { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        emailSettings = await client_.GetFromJsonAsync<EmailSettings>("api/dev/get-email-settings");
+    }
+
+    async Task validSubmit()
+    {
+        var response = await client_.PostAsJsonAsync<EmailSettings>("api/dev/update-email-settings", emailSettings);
+
+        if (response.IsSuccessStatusCode)
+        {
+            notificationService.Notify("Email settings updated");
+            nav_.NavigateTo("dev/dashboard");
+        }
+        else
+        {
+            await notificationService.NotifyNonSuccessResponseAsync(response);
+        }
+    }
+}

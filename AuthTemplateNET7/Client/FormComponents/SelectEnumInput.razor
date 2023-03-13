@@ -1,0 +1,97 @@
+﻿@using AuthTemplateNET7.Client.FormComponents.Internals
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection;
+@using AuthTemplateNET7.Shared.SharedServices;
+@typeparam TEnum
+@inherits SelectBase<TEnum>
+
+<div class="mb-3">
+    <LableHelper InputId="@id" LabelText="@DisplayName" Required="Required" />
+
+    <select
+        @attributes="AdditionalAttributes"
+        @bind="CurrentValueAsString"
+        class="@getClassList(true) @CssClass"
+        id="@id">
+
+        <option disabled="@Required" selected="@firstOptionSelected">
+            @Placeholder
+        </option>
+        @foreach (TEnum item in Enum.GetValues(type))
+        {
+            <option value="@item.ToString()">@getDisplayName(item)</option>
+        }
+    </select>
+
+    @if (ValidationFor != null)
+    {
+        <ValidationMessage For="ValidationFor" />
+    }
+    @if (FormText != null)
+    {
+        <div class="form-text ms-2">
+            @FormText
+        </div>
+    }
+</div>
+
+@code {
+    //added
+
+    /*
+    * Works with any enum
+    * Adapted from https://github.com/meziantou/Meziantou.Framework/blob/ee664b6cf25ab0ae70ceaee55fcd3ef77c30dc4d/src/Meziantou.AspNetCore.Components/InputEnumSelect.cs
+     */
+
+    string getDisplayName(TEnum value)
+    {
+        string text = value.ToString();
+        //see if it's got a [DisplayName]
+        MemberInfo memberInfo = value.GetType().GetMember(text)[0];
+        DisplayAttribute displayAttribute = memberInfo.GetCustomAttribute<DisplayAttribute>();
+
+        if (displayAttribute != null) return displayAttribute.GetName();
+
+        return text.TitleCaseToWords();
+    }
+
+    void setFirstOptionSelected()
+    {
+        if(string.IsNullOrEmpty(CurrentValueAsString))
+        {
+            firstOptionSelected = true;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        setFirstOptionSelected();
+        base.OnInitialized();
+    }
+
+    protected override bool TryParseValueFromString(string value, out TEnum result, out string validationErrorMessage)
+    {
+        if(BindConverter.TryConvertTo(value, System.Globalization.CultureInfo.InvariantCulture, out TEnum _result))
+        {
+            result = _result;
+            validationErrorMessage = null;
+            return true;
+        }
+
+        if (string.IsNullOrEmpty(value))
+        {
+            Type underlyingType = Nullable.GetUnderlyingType(typeof(TEnum));
+
+            if(underlyingType != null) //it's a nullable enum
+            {
+                result = default;
+                validationErrorMessage = null;
+                return true;
+            }
+        }
+
+        result = default;
+        validationErrorMessage = $"The {FieldIdentifier.FieldName} field is not valid.";
+        return false;
+    }
+}

@@ -1,0 +1,19 @@
+﻿@inject IJSRuntime js_;
+
+@code {
+    //added
+
+    /*
+     * You need to allow audio for the song to play
+     * Does the harlem shake
+     */
+    IJSObjectReference module;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await js_.InvokeAsync<IJSObjectReference>("import", "./FunComponents/HarlemShake.razor.js");
+        }
+    }
+}

@@ -1,0 +1,76 @@
+﻿@if (Numbered)
+{
+    <ol class="list-group list-group-numbered @classList" @attributes="AdditionalAttributes">
+        @ChildContent
+    </ol>
+}
+else
+{
+    <ul @attributes="AdditionalAttributes" class="list-group @classList">
+        @ChildContent
+    </ul>
+}
+
+@code {
+    //todo remove this
+
+    /*
+    * Wrapper for Bootstrap's ListGroup. https://getbootstrap.com/docs/5.0/components/list-group/
+    */
+
+    /// <summary>
+    /// Optional. Renders any attributes from this component to the underlying ul/ol[class="list-group"]
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; }
+
+    /// <summary>
+    /// The ListGroupItems you want in this list.
+    /// </summary>
+    [EditorRequired, Parameter] public RenderFragment ChildContent { get; set; }
+
+    /// <summary>
+    /// Optional. Any additional CSS classes for the class attribute. Default is null
+    /// </summary>
+    //[Parameter] public string CssClass { get; set; }
+
+    /// <summary>
+    /// Optional. If true, adds ".list-group-flush" to the class attribute. Default is null.
+    /// </summary>
+    [Parameter] public bool Flush { get; set; }
+
+    /// <summary>
+    /// Optional. If true, creates an ordered list. Default is unordered.
+    /// </summary>
+    [Parameter] public bool Numbered { get; set; }
+
+    Dictionary<string, object> wtf = new Dictionary<string, object>();
+
+    string classList;
+    int callCount = 0;
+
+    protected override void OnParametersSet()
+    {
+        setClassList();
+    }
+
+    void setClassList()
+    {
+        callCount++;
+        if (callCount > 1) return; //to stop classList being added to more than once
+
+        if (Flush) classList = "list-group-flush";
+
+        if (AdditionalAttributes == null) return;
+        foreach (var item in AdditionalAttributes)
+        {
+            if (item.Key == "class")
+            {
+                var value = (string)item.Value;
+                classList += " " + (string)item.Value;
+                AdditionalAttributes.Remove(item.Key);
+                break;
+            }
+        }
+    }
+}

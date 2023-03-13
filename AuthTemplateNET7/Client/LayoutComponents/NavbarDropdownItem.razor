@@ -1,0 +1,23 @@
+﻿<li>
+    <NavLink @attributes="AdditionalAttributes" href="@Href" class="dropdown-item">@LinkText</NavLink>
+</li>
+
+@code {
+    //added
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object> AdditionalAttributes { get; set; }
+
+    /*
+     * Convenience component for Bootstrap's nav dropdown item that uses Microsoft's NavLink component
+     */
+    /// <summary>
+    /// Required. The relative link you want to navigate to. Do not include a starting forward slash
+    /// </summary>
+    [EditorRequired, Parameter] public string Href { get; set; }
+
+    /// <summary>
+    /// Required. The inner text for the link.
+    /// </summary>
+    [EditorRequired, Parameter] public string LinkText { get; set; }
+}

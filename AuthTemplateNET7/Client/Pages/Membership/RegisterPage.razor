@@ -1,0 +1,101 @@
+﻿@page "/membership/register"
+@using AuthTemplateNET7.Shared
+@using AuthTemplateNET7.Shared.Dtos.Membership
+@using AuthTemplateNET7.Client.FormComponents
+@using System.Net
+@inject HttpClient httpClient_
+@inject IJSRuntime js_
+@inject NavigationManager nav_
+
+<PageTitleAndHeader Title="Register" />
+
+<EditFormWrapper Model="registerDto" OnValidSubmit="validSubmit">
+
+    <FormFactory Model="registerDto" />
+
+    <PasswordInput DisplayName="Password" @bind-Value="registerDto.Password" Required="true" ValidationFor="() => registerDto.Password" />
+
+    <PasswordInput DisplayName="Confirm password" @bind-Value="registerDto.ConfirmPassword" Required="true" ValidationFor="() => registerDto.ConfirmPassword" Placeholder="Confirm your password here..." />
+
+    @if(result != null)
+    {
+        RegistrationResult registrationResult = result.RegistrationResult;
+        string css = registrationResult == RegistrationResult.ServerError ? "text-danger" : "";
+        <h3 class="@css">@result.MessageToUser</h3>
+
+        @if(registrationResult == RegistrationResult.EmailAddressExists || registrationResult == RegistrationResult.EmailAndDisplayExist)
+        {
+            <a href="/membership/forgot-password">Forgot password?</a>
+        }
+
+        @if(registrationResult == RegistrationResult.DisplayNameExists)
+        {
+            <table cellpadding="3">
+                <tr><th>Click on one to select it.</th></tr>
+                @foreach (var item in result.SuggestedDisplayNames)
+                {
+                    <tr>
+                        <td>
+                            <button type="button" @onclick="() => updateDisplayName(item)" class="btn btn-link">@item</button>
+                        </td>
+                    </tr>
+                }
+            </table>
+        }
+    }
+</EditFormWrapper>
+
+
+@code {
+    //added
+
+    [Parameter, SupplyParameterFromQuery] public string ReturnUrl { get; set; }
+
+    RegisterDto registerDto = new();
+    RegisterMemberResultDto result;
+    string suppliedDisplayName;
+
+#if DEBUG
+    protected override void OnInitialized()
+    {
+        registerDto = new RegisterDto
+        {
+            DisplayName = "dolly",
+            ConfirmPassword = "helloDollyHowYeBe1!", //in Server.Seeding.MembersSeeder, the password is the same for everone,
+            EmailAddress = "hello@dolly.com",
+            Password = "helloDollyHowYeBe1!"
+        };
+    }
+#endif
+
+    void updateDisplayName(string item)
+    {
+        registerDto.DisplayName = item;
+    }
+
+    async Task validSubmit()
+    {
+        //await Task.Delay(2000); //to see what it does
+        var response = await httpClient_.PostAsJsonAsync<RegisterDto>("api/membership/register", registerDto);
+
+        Console.WriteLine("is success: " + response.IsSuccessStatusCode);
+
+        if(response.IsSuccessStatusCode)
+        {
+            nav_.NavigateTo(ReturnUrl, forceLoad: true); //to get the auth cookie
+            return; //takes a sec to navigate, so return rather than
+        }
+
+        result = await response.Content.ReadFromJsonAsync<RegisterMemberResultDto>();
+
+        if(response.StatusCode == HttpStatusCode.Conflict)
+        {
+            if(result.SuggestedDisplayNames != null)
+            {
+                suppliedDisplayName = registerDto.DisplayName;
+            }
+        }
+
+
+    }
+}

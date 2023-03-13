@@ -1,0 +1,80 @@
+﻿@using AuthTemplateNET7.Client.Components
+@using AuthTemplateNET7.Client.FormComponents
+@using AuthTemplateNET7.Shared.Dtos.Public;
+@inject HttpClient client_
+
+<NotificationService @ref="notificationService" />
+
+<DialogBox @ref="dialogBox">
+    <div class="d-flex justify-content-between">
+        <h2 class="h3 text-center">Join our email list</h2>
+        <button type="button" @onclick="dismiss" class="btn btn-close mt-2 btn-sm"></button>
+    </div>
+    <div class="d-flex">
+        <EditForm Model="dto" OnValidSubmit="join" novalidate>
+            <DataAnnotationsValidator />
+            <label id="join-email-list-label" class="form-label visually-hidden">Email address</label>
+            <div class="input-group">
+                <InputText type="email"
+                    @bind-Value="dto.EmailAddress"
+                       id="join-email-list-input"
+                       placeholder="Enter your email address here..."
+                       aria-labelledby="join-email-list-label"
+                       class="form-control"
+                       style="width: clamp(20ch, 40ch, 60ch);" />
+
+                <SubmitButton Text="Join" @ref="submitButton" />
+            </div>
+
+            <InputText type="hidden" @bind-Value="dto.FirstName" />
+
+            <ValidationMessage For="() => dto.EmailAddress" />
+        </EditForm>
+    </div>
+</DialogBox>
+
+@code {
+    //added
+
+    DialogBox dialogBox;
+    JoinEmailListDto dto = new();
+    NotificationService notificationService; //can't use CascadingParameter because this component is outside the scope
+    DateTime start;
+    SubmitButton submitButton;
+
+    async Task dismiss()
+    {
+        await dialogBox.HideAsync();
+    }
+
+    async Task join()
+    {
+        dto.SecondsToSubmit = (int)(DateTime.UtcNow - start).TotalSeconds;
+
+        submitButton.Disable();
+
+        var response = await client_.PostAsJsonAsync<JoinEmailListDto>("api/interaction/join-email-list", dto);
+
+        if (response.IsSuccessStatusCode)
+        {
+            dto = new();
+
+            submitButton.Enable();
+
+            await dialogBox.HideAsync();
+
+            notificationService.NotifyWithHeading("Thank you!", "We've added you to our email list.", removeAfterSeconds: 10);
+
+            return;
+        }
+
+        await notificationService.NotifyNonSuccessResponseAsync(response);
+    }
+
+    public async Task ShowAsync(string source)
+    {
+        dto.Source = source;
+        start = DateTime.UtcNow;
+        await dialogBox.ShowAsync("join-email-list-input");
+    }
+}

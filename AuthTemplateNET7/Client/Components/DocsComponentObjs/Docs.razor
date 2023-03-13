@@ -1,0 +1,24 @@
+﻿<div class="docs-container">
+    <ul class="docs-nav">
+        @NavPaneItems
+    </ul>
+    <div class="docs-main">
+        @MainContent
+    </div>
+</div>
+
+@code {
+    //added
+
+    /*
+       *
+       */
+
+    /// <summary>
+    /// Required. The container for NavPaneItems
+    /// </summary>
+    [EditorRequired, Parameter] public RenderFragment NavPaneItems { get; set; }
+
+    [EditorRequired, Parameter] public RenderFragment MainContent { get; set; }
+}
+

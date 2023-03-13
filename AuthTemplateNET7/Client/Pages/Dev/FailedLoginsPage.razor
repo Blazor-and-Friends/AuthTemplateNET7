@@ -1,0 +1,57 @@
+﻿@page "/dev/failed-log-ins"
+@using AuthTemplateNET7.Client.Components
+@using AuthTemplateNET7.Shared.PublicModels;
+@attribute [Authorize(Roles = "Dev")]
+@inject HttpClient client_
+
+<PageTitleAndHeader Title="Failed log ins" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftDev />
+    </LeftPane>
+    <MainContent>
+        @if (logins != null)
+        {
+            <div class="d-flex justify-content-center">
+                <table cellpadding="5">
+                    <thead>
+                        <tr>
+                            <th class="border-bottom border-primary">Date/Time</th>
+                            <th class="border-bottom border-primary">IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in logins)
+                        {
+                            <tr>
+                                <td>@item.DateTime.ToString("HH:mm 'UTC' '-' dd MMM yyyy")</td>
+                                <td>
+                                    @item.IpAddress.ToIpLookupLink()
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <Spinner />
+        }
+    </MainContent>
+</SplitContainer>
+
+
+
+@code {
+    //added
+
+    Login[] logins;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await client_.GetFromJsonAsync<Login[]>("api/dev/get-failed-logins");
+        if (result != null) logins = result;
+    }
+}

@@ -1,0 +1,153 @@
+﻿@page "/whats-up-with-that"
+
+@if (selectedVid != null)
+{
+    <div class="d-flex flex-column justify-content-center align-content-center align-items-center">
+        <iframe width="560"
+            height="315"
+            src="@selectedVid.Src"
+            title="@selectedVid.Title"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen>
+        </iframe>
+        <div>
+            @selectedVid.Guests
+        </div>
+        <div>
+            @selectedVid.AirDate.ToString("MMMM dd',' yyyy")
+        </div>
+        <div><a href="https://en.wikipedia.org/wiki/What_Up_with_That%3F" target="_blank" class="text-muted">Wiki page</a></div>
+    </div>
+}
+else
+{
+    <Spinner />
+}
+
+@code {
+    //added
+
+    /*
+    * Displays a random What's Up With That vid
+     */
+
+    WuwtVid selectedVid;
+
+    protected override void OnInitialized()
+    {
+        selectedVid = WuwtVid.GetRandomVid();
+    }
+
+
+    public class WuwtVid
+    {
+        static string lindsey = ". Special guest Lindsey Buckingham!";
+        public string Id { get; set; }
+
+        public DateTime AirDate { get; set; }
+
+        public string Guests { get; set; }
+
+        public string Src
+        {
+            get
+            {
+                return $"https://www.youtube-nocookie.com/embed/{Id}?autoplay=1";
+            }
+        }
+
+        public string Title
+        {
+            get
+            {
+                return Guests;
+            }
+        }
+
+        public static WuwtVid GetRandomVid()
+        {
+            var rare = new List<WuwtVid>
+            {
+                new WuwtVid
+                {
+                    Id = "IHvLhviwK30",
+                    Guests = "Oscar Isaac, Emily Ratajkowski, Nicholas Braun, Jason Sudeikis",
+                    AirDate = new DateTime(2021, 10, 23)
+                },
+                new WuwtVid
+                {
+                    Id = "g2wfiYmbgo",
+                    Guests = "Charles Barkley, DJ Kahled" + lindsey,
+                    AirDate = new DateTime(2020, 4, 25)
+                },
+                new WuwtVid
+                {
+                    Id= "HC8RUbgzDUs",
+                    Guests = "James Franco, Gerard Butler" + lindsey,
+                    AirDate = new DateTime(2009,10, 17)
+                }
+            };
+
+            var vids = new List<WuwtVid>
+            {
+                new WuwtVid
+                {
+                    Id = "nevux3SEz_Y",
+                    Guests = "Al Gore, Mindy Kaling, Joseph Gordon-Levitt" + lindsey,
+                    AirDate = new DateTime(2009, 11, 21)
+                },
+                new WuwtVid
+                {
+                    Id = "njcwA-HvL3U",
+                    Guests = "Mike Tyson, Jack McBrayer, James Franco" + lindsey,
+                    AirDate = new(2009, 12, 19)
+                },
+                new WuwtVid
+                {
+                    Id = "oaRiOU5IiXw",
+                    Guests = "Paul Rudd, Frank Rich, Zach Galifianakis" + lindsey,
+                    AirDate = new(2010, 3, 6)
+                },
+                new WuwtVid
+                {
+                    Id = "Vv98ceYutgQ",
+                    Guests = "Morgan Freeman, Ernest Borgnine, Bryan Cranston" + lindsey,
+                    AirDate = new(2010, 10, 2)
+                },
+                new WuwtVid
+                {
+                    Id = "0p8hZFMqCcY",
+                    Guests = "Robert DeNiro, Robin Williams" + lindsey,
+                    AirDate = new(2010, 12, 4)
+                },
+                new WuwtVid
+                {
+                    Id = "aY3FxWRz1cw",
+                    Guests = "Paul Simon, Chris Colfer, \"another\" Lindsey Buckingham, Ed Helms" + lindsey,
+                    AirDate = new(2011, 5, 14)
+                },
+                new WuwtVid
+                {
+                    Id = "QDdrIRLc9hM",
+                    Guests = "Bill O'Reilly, Kate Upton, Maya Rudolph" + lindsey,
+                    AirDate = new(2012, 2, 18)
+                },
+                new WuwtVid
+                {
+                    Id = "sqpnRyfz_aY",
+                    Guests = "Samuel L. Jackson, Carrie Brownstein, Martin Short" + lindsey,
+                    AirDate = new(2012, 12, 15)
+                }
+            };
+
+            Random random = new();
+
+            var fromRare = random.Next(0, 10) < 2;
+
+            if (fromRare) return rare[random.Next(0, rare.Count)];
+
+            return vids[random.Next(0, vids.Count)];
+        }
+    }
+}

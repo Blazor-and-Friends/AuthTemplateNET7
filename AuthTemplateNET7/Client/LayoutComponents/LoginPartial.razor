@@ -1,0 +1,53 @@
+﻿@implements IDisposable
+@inject HttpClient http_
+@inject IJSRuntime js_
+@inject NavigationManager nav_
+
+<AuthorizeView>
+    <Authorized>
+        <ul class="navbar-nav">
+            <li>
+                <NavLink href="membership/account" class="nav-link">@context.User.Identity.Name</NavLink>
+            </li>
+            <li>
+                <button @onclick="logout" class="btn btn-link nav-link">Log out</button>
+            </li>
+        </ul>
+    </Authorized>
+    <NotAuthorized>
+        <ul class="navbar-nav">
+
+            <li>
+                <NavLink href="@("membership/login?returnUrl=" + nav_.ToBaseRelativePath(nav_.Uri))" class="nav-link">Log in</NavLink>
+            </li>
+            <li>
+                <NavLink href="@("membership/register?returnUrl=" + nav_.ToBaseRelativePath(nav_.Uri))" class="nav-link">Register</NavLink>
+            </li>
+        </ul>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    //added
+
+    void locationChanged(object sender, LocationChangedEventArgs e)
+    {
+        //need this or else the return url doesn't get set
+        StateHasChanged();
+    }
+
+    async Task logout()
+    {
+        await http_.GetAsync("api/authstate/logout");
+        nav_.NavigateTo("/", forceLoad: true); //to remove auth cookie
+    }
+
+    protected override void OnInitialized()
+    {
+        nav_.LocationChanged += locationChanged;
+    }
+    void IDisposable.Dispose()
+    {
+        nav_.LocationChanged -= locationChanged;
+    }
+}

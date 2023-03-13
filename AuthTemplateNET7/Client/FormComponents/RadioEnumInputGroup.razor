@@ -1,0 +1,119 @@
+﻿@using AuthTemplateNET7.Client.FormComponents.Internals
+@using AuthTemplateNET7.Shared.SharedServices
+@using System.ComponentModel.DataAnnotations
+@using System.Linq.Expressions
+@using System.Reflection;
+@typeparam TEnum
+@inherits InputBase<TEnum>
+
+<div class="mb-3">
+    <label class="form-label fw-bold">@DisplayName</label>
+    <br />
+
+    @foreach (TEnum item in Enum.GetValues(type))
+    {
+        var str = item.ToString();
+        string id = StringHelpers.GenerateRandomString();
+        <div class="@containerCss">
+            <input
+                @attributes="AdditionalAttributes"
+                @onchange="valueChanged"
+                checked="@(str == CurrentValueAsString)"
+                class="form-check-input cursor-pointer"
+                id="@id"
+                name="@name"
+                type="radio"
+                value="@item.ToString()"/>
+            <label for="@id" class="form-check-label cursor-pointer me-3">@getDisplayName(item)</label>
+        </div>
+    }
+
+    @if (ValidationFor != null)
+    {
+        <ValidationMessage For="ValidationFor" />
+    }
+    @if (FormText != null)
+    {
+        <div class="form-text ms-2">
+            @FormText
+        </div>
+    }
+</div>
+
+@code {
+    //added
+
+    /*
+    * Works with any enum
+    */
+
+    /// <summary>
+    /// Optional. Adds Bootstrap's div.form-text to the component. Default is null.
+    /// </summary>
+    [Parameter] public RenderFragment FormText { get; set; }
+
+    /// <summary>
+    /// Optional. Sets Bootstrap's checkbox class to stacked or inline. Default is Inline <see href="https://getbootstrap.com/docs/5.0/forms/checks-radios/"/>
+    /// </summary>
+    [Parameter] public RadioPresentationMode RadioPresentationMode { get; set; }
+
+    /// <summary>
+    /// Optional. If true, adds a red asterisk to the end of the DisplayName as an indication to the user that the field is required. Default is false. Note this does nothing for validation, for presentation only.
+    /// </summary>
+    [Parameter] public bool Required { get; set; }
+
+    /// <summary>
+    /// Optional. Only available if CheckboxPresentationMode is NOT CheckboxPresentationMode.Inline. If set, adds MS's ValidationMessage beneath the input.
+    /// </summary>
+    [Parameter] public Expression<Func<TEnum>> ValidationFor { get; set; }
+
+    string containerCss = "form-check-inline";
+    string name = StringHelpers.GenerateRandomString();
+    Type type;
+
+    string getDisplayName(TEnum value)
+    {
+        string text = value.ToString();
+        //see if it's got a [DisplayName]
+        MemberInfo memberInfo = value.GetType().GetMember(text)[0];
+        DisplayAttribute displayAttribute = memberInfo.GetCustomAttribute<DisplayAttribute>();
+
+        if (displayAttribute != null) return displayAttribute.GetName();
+
+        return text.TitleCaseToWords();
+    }
+
+    protected override void OnInitialized()
+    {
+        type = Nullable.GetUnderlyingType(typeof(TEnum)) ?? typeof(TEnum);
+        updateCurrentValue(CurrentValue.ToString());
+        base.OnInitialized();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (RadioPresentationMode == RadioPresentationMode.Stacked) containerCss = "form-check";
+
+        Console.WriteLine("curr value: " + CurrentValue.ToString());
+
+        base.OnParametersSet();
+    }
+
+    protected override bool TryParseValueFromString(string value, out TEnum result, out string validationErrorMessage)
+    {
+        throw new NotSupportedException($"This component does not parse string inputs. Bind to the '{nameof(CurrentValue)}' property, not '{nameof(CurrentValueAsString)}'.");
+    }
+
+    void updateCurrentValue(string value)
+    {
+        if (Enum.TryParse(type, value, out object _result))
+        {
+            CurrentValue = (TEnum)_result;
+        }
+    }
+
+    void valueChanged(ChangeEventArgs args)
+    {
+        updateCurrentValue(args.Value.ToString());
+    }
+}

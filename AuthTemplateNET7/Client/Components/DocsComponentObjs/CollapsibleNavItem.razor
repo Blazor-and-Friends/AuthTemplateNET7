@@ -1,0 +1,43 @@
+﻿<li>
+    <button type="button" @onclick="toggleDropdown" id="@id" role="button" aria-expanded="@showingDropdown.ToString().ToLower()">
+        @if (showingDropdown)
+        {
+            <i class="bi bi-chevron-down me-2 small"></i>
+        }
+        else
+        {
+            <i class="bi bi-chevron-right me-2 small"></i>
+        }
+        @ButtonText
+    </button>
+
+    @if (showingDropdown)
+    {
+        <ul class="list-group ms-4">
+            @ChildContent
+        </ul>
+    }
+</li>
+
+@code {
+    //added
+
+    /*
+    * Toggler button to show additional links within the NavPaneItems RenderFragment on the DocsPage component
+    */
+
+    /// <summary>
+    /// Required. The NavItems you want to include
+    /// </summary>
+    [EditorRequired, Parameter] public RenderFragment ChildContent { get; set; }
+
+    /// <summary>
+    /// Required. The text for the toggler button
+    /// </summary>
+    [EditorRequired, Parameter] public string ButtonText { get; set; }
+
+    string id = StringHelpers.GenerateRandomString();
+    bool showingDropdown = false;
+
+    void toggleDropdown() => showingDropdown = !showingDropdown;
+}

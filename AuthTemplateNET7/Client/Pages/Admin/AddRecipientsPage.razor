@@ -1,0 +1,45 @@
+﻿@page "/admin/add-recipients"
+@using System.Net
+@inject HttpClient client_
+
+<PageTitleAndHeader Title="Add Recipients" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftAdmin />
+    </LeftPane>
+
+    <MainContent>
+        <EditFormWrapper @ref="editFormWrapper" Model="recipient" OnValidSubmit="validSubmit" SubmitButtonText="Add recipient">
+            <FormFactory Model="recipient" />
+        </EditFormWrapper>
+    </MainContent>
+</SplitContainer>
+
+@code {
+    //added
+
+    EditFormWrapper editFormWrapper;
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+    Recipient recipient = new() { Source = "Added by admin" };
+
+    async Task validSubmit()
+    {
+        var response = await client_.PostAsJsonAsync<Recipient>("api/admin/create-recipient", recipient);
+
+        if (response.IsSuccessStatusCode)
+        {
+            //todo focus the email input after adding https://stackoverflow.com/questions/59137973/how-to-set-the-focus-to-an-inputtext-element
+            recipient = new() { Source = "Added by admin" };
+            notificationService.Notify($"Recipient {recipient.Address} created...");
+        }
+        else if (response.StatusCode == HttpStatusCode.Conflict)
+        {
+            notificationService.NotifyError($"You already have a recipient with the email address {recipient.Address}. Only one entry per email address. If necessary, you can update name, etc on the Recipients page.");
+        }
+        else
+        {
+            await notificationService.NotifyNonSuccessResponseAsync(response);
+        }
+    }
+}

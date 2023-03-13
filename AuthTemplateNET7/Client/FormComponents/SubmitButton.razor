@@ -1,0 +1,37 @@
+﻿<button type="submit" disabled="@processing" class="btn btn-primary">
+    @if (processing)
+    {
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+    }
+    @Text
+</button>
+
+@code {
+    //added
+
+    /// <summary>
+    /// Optional. The text the button will display. Default is "Submit".
+    /// </summary>
+    [Parameter] public string Text { get; set; } = "Submit";
+
+    bool processing = false;
+
+    public void Disable()
+    {
+        processing = true;
+        StateHasChanged();
+    }
+
+    public void Enable()
+    {
+        processing = false;
+        StateHasChanged();
+    }
+
+    [Obsolete("Use Disable/Enable instead")]
+    public void ToggleDisabled()
+    {
+        processing = !processing;
+        StateHasChanged();
+    }
+}

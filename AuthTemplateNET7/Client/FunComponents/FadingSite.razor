@@ -1,0 +1,15 @@
+﻿@inject IJSRuntime js_
+
+@code {
+    //added
+
+    /*
+     * Everything fades out
+     */
+    IJSObjectReference module;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        module = await js_.InvokeAsync<IJSObjectReference>("import", "./FunComponents/FadingSite.razor.js");
+    }
+}

@@ -1,0 +1,162 @@
+﻿@typeparam TNullableBool
+@inherits InputBase<TNullableBool>
+@using AuthTemplateNET7.Shared.SharedServices
+@using System.Linq.Expressions
+@inject IJSRuntime js_
+
+@if (CheckboxPresentationMode == CheckboxPresentationMode.Inline
+     || CheckboxPresentationMode == CheckboxPresentationMode.InlineSwitch)
+{
+    <div class="form-check form-check-inline @presentation me-3">
+        <input
+           @attributes="AdditionalAttributes"
+           @bind="CurrentValue"
+           @ref="checkBoxInput"
+           class="@getClassList() @CssClass"
+           id="@id"
+           type="checkbox"
+            />
+        <label for="@id" class="form-check-label cursor-pointer">
+            @DisplayName
+        </label>
+    </div>
+}
+else
+{
+    <div class="mb-3">
+        <div class="form-check @presentation">
+            <input
+               @attributes="AdditionalAttributes"
+               @bind="CurrentValue"
+               @ref="checkBoxInput"
+               class="@getClassList() @CssClass"
+               id="@id"
+               type="checkbox"
+                />
+            <label for="@id" class="form-check-label cursor-pointer">
+                @DisplayName
+            </label>
+        </div>
+
+        @if (ValidationFor != null)
+        {
+            <ValidationMessage For="ValidationFor" />
+        }
+
+        @if (FormText != null)
+        {
+            <div class="form-text ms-2">
+                @FormText
+            </div>
+        }
+    </div>
+}
+
+@code {
+    //added
+
+    /*
+    * Works for both bools and nullable bools. If the CurrentValue is a nullable bool, sets the :indertimanate pseudoclass
+    * @attributes needs to be placed last to overide the supplied attributes
+    */
+
+    /// <summary>
+    /// Optional. Sets Bootstrap's checkbox class to stacked, inline, switch, or inline switch. Default is Stacked <see href="https://getbootstrap.com/docs/5.0/forms/checks-radios/"/>
+    /// </summary>
+    [Parameter] public CheckboxPresentationMode CheckboxPresentationMode { get; set; }
+
+    /// <summary>
+    /// Optional. Only available if CheckboxPresentationMode is NOT CheckboxPresentationMode.Inline.  Adds a "div" with Bootstrap's "form-text" class below the input. (Note: Bootstrap called this class "help-text" in version 4 and below.)
+    /// </summary>
+    [Parameter] public RenderFragment FormText { get; set; }
+
+    /// <summary>
+    /// Optional. Only available if CheckboxPresentationMode is NOT CheckboxPresentationMode.Inline. If set, adds MS's ValidationMessage beneath the input.
+    /// </summary>
+    [Parameter] public Expression<Func<TNullableBool>> ValidationFor { get; set; }
+
+    ElementReference checkBoxInput;
+    string presentation;
+    string id = StringHelpers.GenerateRandomString();
+
+    string getClassList()
+    {
+        string result = "form-check-input cursor-pointer";
+
+        if (AdditionalAttributes == null) return result;
+
+        foreach (var item in AdditionalAttributes)
+        {
+            if(item.Key == "class")
+            {
+                result += " " + item.Value;
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await setIndeterminateState();
+    }
+
+    protected override void OnInitialized()
+    {
+        //updateValue(CurrentValueAsString);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (CheckboxPresentationMode == CheckboxPresentationMode.Switch
+            || CheckboxPresentationMode == CheckboxPresentationMode.InlineSwitch)
+        {
+            presentation = "form-switch";
+        }
+    }
+
+    async Task setIndeterminateState()
+    {
+        //gotta wait for the script to be loaded, parsed
+        bool ffIsLoaded = false; //todo need to refactor CheckboxInput.razor so that it can be used in EditForm as well. The js_ stuff.
+        while (ffIsLoaded == false)
+        {
+            try
+            {
+                ffIsLoaded = await js_.InvokeAsync<bool>("ff.isLoaded");
+            }
+            catch
+            {
+                await Task.Delay(10);
+            }
+        }
+
+        bool isIndeterminate = typeof(TNullableBool).Name == "Boolean" ? false : true;
+
+        await js_.InvokeVoidAsync("ff.setIndeterminateOnCheckbox", checkBoxInput, isIndeterminate);
+    }
+
+    protected override bool TryParseValueFromString(string value, out TNullableBool result, out string validationErrorMessage)
+    {
+        throw new NotSupportedException($"This component does not parse string inputs. Bind to the '{nameof(CurrentValue)}' property, not '{nameof(CurrentValueAsString)}'.");
+    }
+
+    void updateValue(string value)
+    {
+        if (bool.TryParse(value, out bool _result))
+        {
+            CurrentValue = (TNullableBool)(object)_result;
+        }
+        else
+        {
+            CurrentValue = (TNullableBool)(object)null;
+        }
+    }
+
+    void valuedChanged(ChangeEventArgs args)
+    {
+        var val = args.Value.ToString();
+        updateValue(val);
+    }
+}

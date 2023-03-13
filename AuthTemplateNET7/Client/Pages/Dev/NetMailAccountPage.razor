@@ -1,0 +1,72 @@
+﻿@page "/dev/net-mail-account"
+@attribute [Authorize(Roles = "Dev")]
+@inject HttpClient client_
+@inject NavigationManager nav_
+
+<PageTitleAndHeader Title="Create Net Mail Account" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftDev />
+    </LeftPane>
+    <MainContent>
+        @if(account != null)
+        {
+            <EditFormWrapper Model="account" OnValidSubmit="validSubmit" ShowRequiredFieldsReminder="false">
+
+                @if(account.AccountIsStored)
+                {
+                    <div class="alert alert-success" role="alert">
+                        <h4 class="alert-heading">Account info is stored</h4>
+                        <p class="fst-italic">Use the form below to change or delete the account, or to test the account info is correct.</p>
+                    </div>
+                }
+
+                <FormFactory Model="account" />
+            </EditFormWrapper>
+        }
+        else
+        {
+            <Spinner />
+        }
+    </MainContent>
+</SplitContainer>
+
+<ConfirmDialog @ref="confirmDialog" />
+
+@code {
+    //added
+
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+
+    NetMailAccountDto account;
+    ConfirmDialog confirmDialog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        account = await client_.GetFromJsonAsync<NetMailAccountDto>("api/dev/get-net-mail-account");
+    }
+
+    async Task validSubmit()
+    {
+        if(account.DeleteAccount)
+        {
+            var yes = await confirmDialog.ConfirmAsync("Are you sure you want to delete the account info? This action can not be undone", "Confirm Delete");
+
+            if (!yes) return;
+        }
+
+        var response = await client_.PostAsJsonAsync<NetMailAccountDto>("api/dev/set-net-mail-account", account);
+
+        var contentStr = await response.Content.ReadAsStringAsync();
+
+        if (response.IsSuccessStatusCode)
+        {
+            notificationService.Notify(contentStr, removeAfterSeconds: 10);
+            nav_.NavigateTo("dev/dashboard");
+            return;
+        }
+
+        await notificationService.NotifyNonSuccessResponseAsync(response);
+    }
+}

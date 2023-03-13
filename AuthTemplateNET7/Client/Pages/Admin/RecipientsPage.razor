@@ -1,0 +1,228 @@
+﻿@page "/admin/recipients"
+@using System.Net;
+@inject HttpClient client_
+
+<PageTitleAndHeader Title="Recipients" />
+
+<Spinner @ref="spinner" ShowWhenInitizialed="false" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftAdmin />
+    </LeftPane>
+
+    <MainContent>
+        @*@if (addingRecipients)
+        {
+            <EditFormWrapper Model="newRecipient" OnValidSubmit="createRecipient" SubmitButtonText="Add">
+                <FormFactory Model="newRecipient" />
+
+                <button @onclick="() => addingRecipients = false" type="button" class="btn btn-secondary me-3">Done (hide form)</button>
+            </EditFormWrapper>
+        }
+        else
+        {
+            <button type="button" @onclick="() => addingRecipients = true" class="btn btn-primary">Add recipients</button>
+        }*@
+
+        @if(recipients != null)
+        {
+            <div class="d-flex justify-content-center">
+                <table cellpadding="5" style="min-width: 100%;">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Notes</th>
+                            <th>Added</th>
+                            <th>Address</th>
+                            <th>First</th>
+
+                            <th>Last</th>
+                            <th>Source</th>
+                            <th>Subscribed/<br />Validation</th>
+                        </tr>
+                        <tr>
+                            <td colspan="8">
+                                <input @bind="filter" @bind:event="oninput" placeholder="Filter on Address, First, Last, Notes, Source..." class="form-control" />
+                            </td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in recipients)
+                        {
+                            if(isFiltered(item))
+                            {
+                                continue;
+                            }
+                            <tr class="@item.RowCss">
+                                <td>
+                                    <button @onclick="() => item.Editing = !item.Editing"
+                                        disabled="@(item.Editing)"
+                                        class="btn btn-info">
+                                        <i class="bi-pencil"></i>
+                                    </button>
+                                </td>
+                                <td title="NOTES: @item.Notes">
+                                    <button @onclick="() => item.ShowingNotes = !item.ShowingNotes" class="@(string.IsNullOrWhiteSpace(item.Notes) ? "btn btn-outline-info" : "btn btn-info") ">
+                                        <i class="@(item.ShowingNotes ? "bi bi-eye-slash" : "bi bi-eye")"></i>
+                                    </button>
+                                </td>
+                                <td>
+                                    @item.DateAdded.ToString("dd MMM yyyy")
+                                </td>
+                                <td>
+                                    @item.Address.ToEmailLink()
+                                </td>
+                                <td>
+                                    @item.FirstName
+                                </td>
+
+                                <td>
+                                    @item.LastName
+                                </td>
+                                <td>
+                                    @item.Source
+                                </td>
+                                <td>
+                                    <input type="checkbox" checked="@item.Unsubscribed" disabled class="me-2" />
+                                    @item.ValidationStatus.ToString().TitleCaseToWords()
+                                </td>
+                            </tr>
+                            @if (item.ShowingNotes)
+                            {
+                                <tr>
+                                    <td colspan="8">
+                                        <pre class="white-space-pre-wrap">@item.Notes</pre>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th colspan="8"><Hr /></th>
+                                </tr>
+                            }
+                            @if(item.Editing)
+                            {
+                                <tr>
+                                    <td colspan="8">
+                                        <EditFormWrapper Model="item" OnValidSubmit="() => updateRecipient(item)" SubmitButtonText="Update">
+                                            <FormFactory Model="item" />
+
+                                            <button @onclick="() => item.Editing = false" type="button" class="btn btn-outline-danger me-3">Cancel</button>
+                                        </EditFormWrapper>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="8">
+                                        <Hr />
+                                    </td>
+                                </tr>
+                            }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </MainContent>
+</SplitContainer>
+
+@code {
+    //added
+
+    //bool addingRecipients;
+    StringComparison comparison = StringComparison.OrdinalIgnoreCase;
+    string filter = "";
+    Recipient newRecipient = new() { Source = "Added by admin" };
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+    List<Recipient> recipients;
+    Spinner spinner;
+
+    //async Task createRecipient()
+    //{
+    //    if(recipients.Any(m => m.Address == newRecipient.Address))
+    //    {
+    //        filter = newRecipient.Address;
+
+    //        notificationService.NotifyError($"You already have a recipient with the email address {newRecipient.Address}. Only one entry per email address.");
+    //        return;
+    //    }
+
+    //    var response = await client_.PostAsJsonAsync<Recipient>("api/admin/create-recipient", newRecipient);
+
+    //    if(response.IsSuccessStatusCode)
+    //    {
+    //        Recipient created = await response.Content.ReadFromJsonAsync<Recipient>();
+    //        recipients.Add(created);
+    //        newRecipient = new() { Source = "Added by admin" };
+    //        notificationService.Notify($"Recipient {created.Address} added...");
+    //    }
+    //    else if (response.StatusCode == HttpStatusCode.Conflict)
+    //    {
+    //        notificationService.NotifyError($"You already have a recipient with the email address {newRecipient.Address}. Only one entry per email address. Use the table below if you want to edit name/notes, etc.");
+    //    }
+    //    else
+    //    {
+    //        await notificationService.NotifyNonSuccessResponseAsync(response);
+    //    }
+    //}
+
+    protected override async Task OnInitializedAsync()
+    {
+        while (spinner == null) await Task.Delay(10);
+
+        spinner.ShowSpinner(maskViewport: false);
+
+        recipients = await client_.GetFromJsonAsync<List<Recipient>>("api/admin/get-recipients");
+
+        spinner.HideSpinner();
+    }
+
+    async Task updateRecipient(Recipient r)
+    {
+        var response = await client_.PostAsJsonAsync<Recipient>("api/admin/update-recipient", r);
+
+        if (response.IsSuccessStatusCode)
+        {
+            r.Editing = false;
+            notificationService.Notify($"Recipient {r.Address} updated.");
+        }
+        else
+        {
+            await notificationService.NotifyNonSuccessResponseAsync(response);
+        }
+    }
+
+    bool isFiltered(Recipient item)
+    {
+        if (string.IsNullOrWhiteSpace(filter)
+            || filter.Length < 3)
+        {
+            return false;
+        }
+
+        if (item.Address.Contains(filter, comparison))
+        {
+            return false;
+        }
+
+        if (item.FirstName != null && item.FirstName.Contains(filter, comparison))
+        {
+            return false;
+        }
+
+        if (item.LastName != null && item.LastName.Contains(filter, comparison))
+        {
+            return false;
+        }
+
+        if (item.Notes != null && item.Notes.Contains(filter, comparison))
+        {
+            return false;
+        }
+
+        if (item.Source != null && item.Source.Contains(filter, comparison))
+        {
+            return false;
+        }
+
+        return true;
+    }
+}

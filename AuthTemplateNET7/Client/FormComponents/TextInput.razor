@@ -1,0 +1,44 @@
+﻿@using AuthTemplateNET7.Client.FormComponents.Internals
+@inherits BaseInput<string>
+
+<div class="mb-3">
+    <LableHelper InputId="@id" LabelText="@DisplayName" Required="Required" />
+
+    <input
+        @attributes="AdditionalAttributes"
+        @bind="CurrentValueAsString"
+        class="@getClassList() @CssClass"
+        id="@id"
+        placeholder="@Placeholder" />
+
+    @if (ValidationFor != null)
+    {
+        <ValidationMessage For="ValidationFor" />
+    }
+    @if(FormText != null)
+    {
+        <div class="form-text ms-2">
+            @FormText
+        </div>
+    }
+
+</div>
+
+@code {
+    //added
+
+    /*
+     * Can be used as a catchall for input[type="tel, color, etc"]
+     * @attributes needs to be placed last to overide the supplied attributes
+     */
+
+    //todo need to handle if the dev puts id or placeholder attributes on the form inputs
+
+
+    protected override bool TryParseValueFromString(string value, out string result, out string validationErrorMessage)
+    {
+        result = value;
+        validationErrorMessage = null;
+        return true;
+    }
+}

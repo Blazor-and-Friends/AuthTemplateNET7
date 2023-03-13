@@ -1,0 +1,47 @@
+﻿@page "/admin/dashboard"
+@using AuthTemplateNET7.Client.Components
+@using AuthTemplateNET7.Shared.Dtos.Admin
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient client_
+
+<PageTitleAndHeader Title="Dashboard - Admin" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftAdmin />
+    </LeftPane>
+    <MainContent>
+        @if(pageModel != null)
+        {
+            <div class="d-flex justify-content-center">
+                <table cellpadding="4">
+                    <tr>
+                        <th>Contact messages</th>
+                        <td>@pageModel.ContactMessagesCount</td>
+                    </tr>
+                    <tr>
+                        <th>Failed log ins</th>
+                        <td>@pageModel.FailedLogins</td>
+                    </tr>
+                </table>
+            </div>
+        }
+        else
+        {
+            <Spinner />
+        }
+    </MainContent>
+</SplitContainer>
+
+
+
+@code {
+    //added
+
+    DashboardPageModel pageModel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        pageModel = await client_.GetFromJsonAsync<DashboardPageModel>("api/admin/get-dashboard-model");
+    }
+}

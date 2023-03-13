@@ -1,0 +1,313 @@
+﻿@page "/form-sample-objs/input-examples"
+@using AuthTemplateNET7.Client.FormComponents
+@using AuthTemplateNET7.Client.Components
+@using AuthTemplateNET7.Client.DeletemeComponents
+@using AuthTemplateNET7.Client.Bases
+
+@inherits FragmentNavigationBasePage
+
+<PageTitleAndHeader Title="Input examples" />
+
+<div class="d-flex">
+    <div></div>
+    <div></div>
+</div>
+
+<EditFormWrapper Model="samplePerson" OnInvalidSubmit="invalidSubmit" OnValidSubmit="validSubmit" SubmitButtonText="Display JSON">
+
+    <TimeOnlyInput DisplayName="Current time" @bind-Value="samplePerson.CurrentTime" Required="true" ValidationFor="() => samplePerson.CurrentTime" />
+
+    <TimeOnlyInput DisplayName="Opening time" @bind-Value="samplePerson.OpeningTime" ValidationFor="() => samplePerson.OpeningTime" />
+
+    <TextInput type="color" class="form-control-color" DisplayName="Favorite color" @bind-Value="samplePerson.FavoriteColor" />
+
+    <RadioEnumInputGroup DisplayName="Favorite Checkbox Presentation Mode" @bind-Value="samplePerson.CheckboxPresentationMode" Required="true" ValidationFor="() => samplePerson.CheckboxPresentationMode" />
+
+    <!--Numbers-->
+    <fieldset>
+        <legend>Numbers</legend>
+
+        <NumberInput DisplayName="Whole dollars in my pocket" @bind-Value="samplePerson.WholeDollarsInMyPocket" step="5" />
+    </fieldset>
+
+    <ComponentParametersTable Indent="0" Title="Parameters common to all inputs and textarea">
+        <ParameterRow DefaultValue="null" ParameterName="DisplayName" Type="string" Notes="Inherited from MS's InputBase<T>">
+            Text that will go into the label for the input.
+        </ParameterRow>
+        <ParameterRow DefaultValue="null" ParameterName="FormText" Type="RenderFragment">
+            Adds a <code>div.form-text</code> to the containing div.
+        </ParameterRow>
+        <ParameterRow DefaultValue="null" ParameterName="ValidationFor" Type="Expression<Func<T>>">
+            Adds a &lt;ValidationMessage> component to the containing div.
+        </ParameterRow>
+    </ComponentParametersTable>
+
+
+    <ComponentParametersTable Indent="0" Title="Parameters common to all inputs EXCEPT checkbox and radio">
+
+        <ParameterRow DefaultValue="Enter {DisplayName.ToLower()} here..." ParameterName="Placeholder" Type="string">
+            Value for the <code>placeholder</code> on the input. Pass in <code>null</code> if you don't want to have a placeholder.
+        </ParameterRow>
+
+        <ParameterRow DefaultValue="false" ParameterName="Required" Type="bool">
+            If true, adds a red asterisk to the end of the label text. On <code>select</code> elements, will disable the first option. See <a target="_self" href="@getAbsoluteUrlWithFragment("#select-inputs")">Select inputs</a> Which isn't working. Try <a href="https://chrissainty.com/fragment-routing-with-blazor/" target="_blank">chrissainty.com/fragment-routing-with-blazor/</a> <a href="https://github.com/chrissainty/BlazorFragmentNavigation/tree/master/src">source code</a>.
+        </ParameterRow>
+    </ComponentParametersTable>
+
+
+    <!--checkbox-->
+    <fieldset>
+        <legend>CheckboxInput</legend>
+
+        <ComponentParametersTable Indent="0">
+            <ParameterRow DefaultValue="Stacked" ParameterName="CheckboxPresentationMode" Type="enum">
+                Determines the Bootstrap classes for the containing div and the input.
+                <table cellpadding="5">
+                    <tr>
+                        <th>Stacked</th>
+                        <td>Component in effect is <code>display: block</code>. Adds "form-check" to the containing div.</td>
+                    </tr>
+                    <tr>
+                        <th>Inline</th>
+                        <td>Component in effect is <code>display: inline-block</code>. Adds "form-check-inline" to the containing div.</td>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <td></td>
+                    </tr>
+                </table>
+
+                <a href="https://getbootstrap.com/docs/5.0/forms/checks-radios/">Bootstrap checkbox docs</a>
+            </ParameterRow>
+        </ComponentParametersTable>
+
+        @*<InputCheckbox DisplayName="Over 18?" @bind-Value="samplePerson.Over18" />*@
+
+        <CheckboxInput class="text-danger" DisplayName="Yes, I am over 18 years of age"
+                       @bind-Value="samplePerson.Over18"
+                       ValidationFor="() => samplePerson.Over18">
+
+            <FormText>This is a <code>nullable bool</code> with a <code>[Required]</code> attribute. If it remains null, it will throw a validation error on form submit.</FormText>
+
+        </CheckboxInput>
+
+        <CheckboxInput DisplayName="Own a car?"
+                       @bind-Value="samplePerson.OwnACar"
+                       CheckboxPresentationMode="CheckboxPresentationMode.Switch"
+                       ValidationFor="() => samplePerson.OwnACar">
+
+            <FormText>This is a regular <code>bool</code> with the <code>CheckboxPresentationMode</code> set to <code>CheckboxPresentationMode.Switch</code></FormText>
+
+        </CheckboxInput>
+
+        <div class="mb-3">
+            <label class="fw-bold">Things I like on my pizza:</label>
+            <div>
+                <CheckboxInput DisplayName="Italian sausage"
+                    @bind-Value="samplePerson.ItalianSausge"
+                    CheckboxPresentationMode="CheckboxPresentationMode.Inline" />
+
+                <CheckboxInput DisplayName="Mushrooms"
+                    @bind-Value="samplePerson.Mushrooms"
+                    CheckboxPresentationMode="CheckboxPresentationMode.Inline" />
+
+                <CheckboxInput DisplayName="Extra cheese"
+                    @bind-Value="samplePerson.ExtraCheese"
+                    CheckboxPresentationMode="CheckboxPresentationMode.Inline" />
+            </div>
+            <div class="form-text ms-2">This is a sample on Bootstrap's inline checkboxes</div>
+        </div>
+
+        <hr />
+    </fieldset>
+
+    <!--date-->
+    <fieldset>
+        <legend>Date/time types</legend>
+
+        <ComponentParametersTable Title="Common parameters">
+            <ParameterRow ParameterName="MaxDate" DefaultValue="DateTime.MaxValue" Type="DateTime">
+                Sets the <code>max</code> attribute on the input.
+            </ParameterRow>
+            <ParameterRow ParameterName="MinDate" DefaultValue="DateTime.MinValue" Type="DateTime">
+                Sets the <code>min</code> attribute on the input.
+            </ParameterRow>
+        </ComponentParametersTable>
+
+        <fieldset class="ms-4">
+            <legend>DateInput</legend>
+
+            <ListGroup Flush="true">
+                <ListGroupItem>Hello dolly</ListGroupItem>
+                <ListGroupItem>How ye be</ListGroupItem>
+            </ListGroup>
+
+            <DateInput
+                DisplayName="Date of birth"
+                @bind-Value="samplePerson.DateOfBirth"
+                Required="true"
+                ValidationFor="() => samplePerson.DateOfBirth" />
+
+            <DateInput
+                DisplayName="First time I had pizza"
+                @bind-Value="samplePerson.FirstTimeIHadPizza"
+                ValidationFor="() => samplePerson.FirstTimeIHadPizza" />
+
+
+            <hr />
+        </fieldset>
+
+        <fieldset class="ms-4">
+            <legend>DateTimeInput</legend>
+
+            <DateTimeInput DisplayName="Page loaded at"
+                @bind-Value="samplePerson.PageLoadedAt" />
+
+            <DateTimeInput DisplayName="When I met my mate"
+                @bind-Value="samplePerson.WhenIMetMyMate" />
+        </fieldset>
+
+        <hr />
+    </fieldset>
+
+    <!--select-->
+    <fieldset>
+        <legend id="select-inputs">Select inputs</legend>
+
+        <ComponentParametersTable Title="Common parameters" Indent="0">
+            <ParameterRow DefaultValue="null" ParameterName="FirstOptionText" Type="string">
+                If supplied, prepends an option element with this text. If the Required property is set to true, adds a disabled attribute to the option element.
+            </ParameterRow>
+        </ComponentParametersTable>
+
+        <fieldset class="m-4">
+            <legend>SelectInput</legend>
+            <ListGroup Flush="true" class="mb-3 fst-italic fw-bold">
+                <ListGroupItem>
+                    Supports
+                    <code>int</code>,
+                    <code>Guid</code>,
+                    <code>long</code>
+                    types as well as their <code>nullable</code>s.
+                </ListGroupItem>
+                <ListGroupItem>
+                    <span class="fw-bold fst-italic">Note:</span> Does not support <code>enums</code>. Use <code>SelectEnumInput</code> instead.
+                </ListGroupItem>
+            </ListGroup>
+
+            <SelectInput DisplayName="Favorite ASP.NET Community Standup regular"
+                         @bind-Value="samplePerson.FavoriteAspNetCommunityStandupRegularId"
+                         FirstOptionText="Select person..."
+                         Required="true"
+                         ValidationFor="() =>
+                         samplePerson.FavoriteAspNetCommunityStandupRegularId">
+
+                <OptionElements>
+                    @foreach (var item in samplePerson.MicrosoftPeople)
+                    {
+                        <option value="@item.Id">@item.Name</option>
+                    }
+                </OptionElements>
+            </SelectInput>
+
+            <SelectInput DisplayName="Favorite language"
+                         @bind-Value="samplePerson.FavoriteLanguageId"
+                         FirstOptionText="Select favorite..."
+                         Required="true"
+                         ValidationFor="() => samplePerson.FavoriteLanguageId">
+
+                <OptionElements>
+                    @foreach (var item in samplePerson.ProgrammingLanguages)
+                    {
+                        <option value="@item.Id">@item.Name</option>
+                    }
+                </OptionElements>
+
+            </SelectInput>
+
+
+
+            <div class="ms-4">
+                <div class="fw-bold">Parameters</div>
+                <table cellpadding="3">
+                    <tr>
+                        <th></th>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <td></td>
+                    </tr>
+                </table>
+            </div>
+        </fieldset>
+
+        <fieldset class="m-sm-4">
+            <legend>SelectEnumInput</legend>
+
+            <SelectEnumInput DisplayName="Preferred way to display a Bootstrap checkbox" @bind-Value="samplePerson.CheckboxPresentationMode" Required="true" />
+        </fieldset>
+        <hr />
+    </fieldset>
+
+    <fieldset>
+        <legend>TextareaInput/TextInput</legend>
+
+        <TextareaInput DisplayName="Tell us about yourself"
+            @bind-Value="samplePerson.TellUsAboutYourself"
+            Required="true" />
+
+        <TextInput DisplayName="Name"
+            @bind-Value="samplePerson.Name"
+            ValidationFor="() => samplePerson.Name"
+            Required="true" />
+
+    </fieldset>
+
+</EditFormWrapper>
+
+<fieldset>
+    <legend>JSON:</legend>
+    <pre>@json</pre>
+</fieldset>
+
+@code {
+    //added
+
+    string json;
+    SamplePerson samplePerson = new();
+
+    async Task invalidSubmit()
+    {
+        json = "...";
+        await Task.Delay(1000);
+        json = samplePerson.ToJson(true);
+    }
+
+    async Task validSubmit()
+    {
+        json = "...";
+        await Task.Delay(1000);
+        json = samplePerson.ToJson(true);
+    }
+}
+
+<fieldset>
+    <legend>Helpful links</legend>
+
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/forms-and-input-components?view=aspnetcore-7.0#built-in-input-components">Blazor input types</a>
+
+        <a href="https://www.w3schools.com/html/html_form_input_types.asp">HTML input types</a>
+
+        <a href="https://github.com/dotnet/aspnetcore/tree/main/src/Components/Web/src/Forms">Blazor forms source code</a>
+
+        <a href="https://getbootstrap.com/docs/5.0/forms">Bootstrap 5 form docs</a>
+    </div>
+</fieldset>
+
+

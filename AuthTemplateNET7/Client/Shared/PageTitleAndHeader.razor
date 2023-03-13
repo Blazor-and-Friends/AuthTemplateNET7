@@ -1,0 +1,33 @@
+﻿<PageTitle>@Title - AuthTemplateNET7</PageTitle>
+<h1 class="text-center">@Title</h1>
+@if(MetaDescription != null)
+{
+    <HeadContent>
+        <meta name="description" content="@MetaDescription" />
+    </HeadContent>
+}
+
+@code {
+    //added
+    /*
+    * Convenience component that adds an h1.text-centered and suffixes your HTML title element with the name of your website. Optionally adds a description meta tag
+    */
+
+    /// <summary>
+    /// Optional. The text placed into the content attribute of a meta[name="description"] tag
+    /// </summary>
+    [Parameter] public string MetaDescription { get; set; }
+
+    /// <summary>
+    /// Required. The text in the h1 element of your page as well as the text prepended to your HTML title element
+    /// </summary>
+    [EditorRequired, Parameter] public string Title { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if(MetaDescription != null && MetaDescription.Length > 155)
+        {
+            throw new Exception("It is recommended you meta description tag not be longer than 155 characters");
+        }
+    }
+}

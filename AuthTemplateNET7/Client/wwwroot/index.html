@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>AuthTemplateNET7</title>
+    <base href="/" />
+    <link id="bs-theme" href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+
+    <script>
+        function setTheme(theme) { // 'light' or 'dark'
+
+            const STORAGE_KEY = "IS_SITE_THEME_DARK";
+
+            let isDark = false;
+
+            if (theme) {
+                isDark = theme === 'dark';
+                setLinkAttribute(isDark);
+                localStorage.setItem(STORAGE_KEY, isDark);
+                return isDark;
+            }
+
+            let storedTheme = localStorage.getItem(STORAGE_KEY);
+
+            if (storedTheme) {
+                isDark = storedTheme === 'true';
+                //setLinkAttribute(isDark);
+            }
+            else if (window.matchMedia) {
+                isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                //setLinkAttribute(isDark);
+                localStorage.setItem(STORAGE_KEY, isDark);
+            }
+            else {
+                //setLinkAttribute(false);
+
+                localStorage.setItem(STORAGE_KEY, isDark);
+            }
+
+            setLinkAttribute(isDark);
+
+            return isDark;
+        }
+
+        function setLinkAttribute(isDark) {
+            let cssLink = document.getElementById('bs-theme');
+            const lightThemedHref = 'css/bootstrap/bootstrap.min.css';
+            const darkThemedHref = 'css/bootstrap/darkly.min.css';
+
+            if (isDark) cssLink.setAttribute('href', darkThemedHref);
+            else cssLink.setAttribute('href', lightThemedHref);
+        }
+
+        setTheme();
+    </script>
+
+    <link href="css/lib/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
+
+    <link href="css/app.css" rel="stylesheet" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="AuthTemplateNET7.Client.styles.css" rel="stylesheet" />
+    <script defer type="text/javascript" src="js/app.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+
+</html>

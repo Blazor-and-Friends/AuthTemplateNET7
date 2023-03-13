@@ -1,0 +1,36 @@
+﻿@using AuthTemplateNET7.Client.Components
+@inherits LayoutComponentBase
+@inject IJSRuntime js_
+
+<Navbar />
+
+<CascadingValue Value="NotificationService">
+    <CascadingValue Value="JoinEmailList">
+        <main class="mt-2">
+            @Body
+        </main>
+
+        <Footer />
+    </CascadingValue>
+</CascadingValue>
+
+<CookieConsent UseCookieConsent="false" />
+<JoinEmailList @ref="JoinEmailList" />
+<NotificationService @ref="NotificationService" />
+
+@code {
+    //added
+
+    JoinEmailList JoinEmailList;
+    NotificationService NotificationService;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        /*
+         * Sets [target='_blank'], adds an i.oi oi-external-link to all anchor elements that don't have the target attribute set and link to an external websit.
+         */
+        await js_.InvokeVoidAsync("tf.setExternalLinks");
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+}

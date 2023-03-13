@@ -1,0 +1,116 @@
+﻿@using AuthTemplateNET7.Client.FormComponents.Internals
+@using AuthTemplateNET7.Client.FormComponents.Internals.FormFactoryHelpers;
+@typeparam TModel
+
+@if (fields != null)
+{
+    foreach (var field in fields)
+    {
+        string description = field.Description;
+        <div class="mb-3">
+            @if (field.FieldSelector == FieldSelector.Control)
+            {
+                <LableHelper
+                    InputId="@field.InputId"
+                    LabelText="@field.DisplayName"
+                    Required="@field.Required" />
+
+                @field.EditorTemplate
+                @field.ValidationMessageTemplate
+                @if(description != null)
+                {
+                    <div class="form-text ms-3">
+                        @description
+                    </div>
+                }
+            }
+            else if (field.FieldSelector == FieldSelector.Check)
+            {
+                bool required = field.Required;
+                string title = required ? "Required" : "";
+                <div class="form-check @field.FormSwitch">
+                    @field.EditorTemplate
+                    <label for="@field.InputId" class="form-check-label ms-2 cursor-pointer" title="@title">
+                        @field.DisplayName
+                        @if(required)
+                        {
+                            <span class="text-danger fst-italic ms-1">*</span>
+                        }
+                    </label>
+                </div>
+                @field.ValidationMessageTemplate
+                @if(description != null)
+                {
+                    <div class="form-text ms-2">
+                        @description
+                    </div>
+                }
+            }
+
+            else if(field.FieldSelector == FieldSelector.Select)
+            {
+                <LableHelper
+                    InputId="@field.InputId"
+                    LabelText="@field.DisplayName"
+                    Required="@field.Required" />
+
+                @field.SelectEditorTemplate
+                @field.ValidationMessageTemplate
+                @if(description != null)
+                {
+                    <div class="form-text ms-3">
+                        @description
+                    </div>
+                }
+            }
+        </div>
+    }
+}
+
+@code {
+    //added
+
+    /// <summary>
+    /// Optional. If true, each field includes a ValidationMessage. Default is true.
+    /// </summary>
+    [Parameter] public bool DisplayValidationMessages { get; set; } = true;
+
+    [EditorRequired, Parameter] public TModel Model { get; set; }
+
+
+    [Parameter] public EventCallback<TModel> ModelChanged { get; set; }
+
+    List<GenericField<TModel>> fields;
+
+    protected override void OnParametersSet()
+    {
+        //todo is this because OnParametersSet gets called twice?
+        if (fields != null)
+        {
+            foreach (var field in fields)
+            {
+                field.ValueChanged -= OnValueChanged;
+            }
+        }
+
+        if (Model != null)
+        {
+            FormFieldFactory<TModel> formFieldFactory = new FormFieldFactory<TModel>(this);
+            fields = formFieldFactory.Create();
+
+            foreach (var field in fields)
+            {
+                field.ValueChanged += OnValueChanged;
+            }
+        }
+        else
+        {
+            fields = null;
+        }
+    }
+
+    private void OnValueChanged(object sender, EventArgs e)
+    {
+        InvokeAsync(() => ModelChanged.InvokeAsync(Model));
+    }
+}

@@ -1,0 +1,23 @@
+﻿@using AuthTemplateNET7.Client.LayoutComponents
+
+<AuthorizeView Roles="Dev">
+    <NavbarDropdownMenu LinkText="Dev">
+        <NavbarDropdownItem @onclick="LinkClickedCallback" Href="dev/dashboard" LinkText="Dashboard" />
+
+        <li><hr class="dropdown-divider"></li>
+        <li><hr class="dropdown-divider"></li>
+        <NavbarDropdownItem @onclick="LinkClickedCallback" Href="dev/log-items" LinkText="Log items" />
+        <NavbarDropdownItem @onclick="LinkClickedCallback" Href="dev/failed-log-ins" LinkText="Failed log ins" />
+        <NavbarDropdownItem @onclick="LinkClickedCallback" Href="whats-up-with-that" LinkText="What's up with that" />
+        <li class="text-center">TODO REMOVE THIS</li>
+        <li><hr class="dropdown-divider"></li>
+        <NavbarDropdownItem @onclick="LinkClickedCallback" Href="form-sample-objs/input-examples" LinkText="*Input examples" />
+    </NavbarDropdownMenu>
+</AuthorizeView>
+
+@code{
+    //added
+
+    //hack this seems really hokey to have to add click listeners on each link
+    [EditorRequired, Parameter] public EventCallback LinkClickedCallback { get; set; }
+}

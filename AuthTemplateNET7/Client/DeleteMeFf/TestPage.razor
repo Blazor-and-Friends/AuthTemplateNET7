@@ -1,0 +1,29 @@
+﻿@page "/test-page"
+@using AuthTemplateNET7.Client.FormComponents
+@using AuthTemplateNET7.Client.FormComponents.Internals.FormFactoryHelpers.CustomInputs
+<PageTitleAndHeader Title="Test page" />
+
+<EditFormWrapper Model="model" OnInvalidSubmit="invalidSubmit" OnValidSubmit="validSubmit" SubmitButtonText="Show JSON">
+
+    <FormFactory Model="model" />
+</EditFormWrapper>
+
+<fieldset>
+    <legend>JSON</legend>
+    <pre>@json</pre>
+</fieldset>
+
+@code {
+    string json;
+    TestObject model = new();
+
+    void invalidSubmit()
+    {
+        json = model.ToJson(true);
+    }
+
+    void validSubmit()
+    {
+        json = model.ToJson(true);
+    }
+}

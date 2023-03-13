@@ -1,0 +1,178 @@
+﻿@page "/dev/log-items"
+@using AuthTemplateNET7.Client.Components
+@using AuthTemplateNET7.Shared.Dtos;
+@using AuthTemplateNET7.Shared.PublicModels;
+@using AuthTemplateNET7.Shared.SharedServices;
+@attribute [Authorize(Roles = "Dev")]
+@inject HttpClient client_
+@inject NavigationManager nav_
+
+<PageTitleAndHeader Title="Log items" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftDev />
+    </LeftPane>
+    <MainContent>
+        @if (logItems != null)
+        {
+            <div class="d-flex flex-wrap justify-content-around">
+
+                <button @onclick="deleteAll" class="btn btn-danger">Delete all</button>
+                <button @onclick="deleteUnselected" class="btn btn-outline-danger">Delete unselected</button>
+                <button @onclick="deleteSelected" class="btn btn-outline-danger">Delete selected</button>
+            </div>
+
+            <table class="table table-sm table-responsive">
+                <thead>
+                    <tr>
+                        <th title="Select/Deselect all" class="border-bottom border-primary">
+                            <input type="checkbox" @onchange="selectDeselectAllChanged" />
+                        </th>
+                        <th>ST</th>
+                        <th class="border-bottom border-primary">Date<br />(Delete after)</th>
+                        <th class="border-bottom border-primary">Message</th>
+                        <th class="border-bottom border-primary">Error message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in logItems)
+                    {
+                        <tr class="@item.CssClass">
+                            <td>
+                                <input type="checkbox" @bind="@item.Selected" title="Select for deleting OR saving" />
+                            </td>
+                            <td title="STACK TRACE: @item.StackTrace">
+                                <button
+                                    @onclick="() => item.ShowStackTrace = !item.ShowStackTrace"
+                                    class="btn @(item.StackTrace == null ? "btn-outline-info" : "btn-info")">
+                                    <i class="bi @(item.ShowStackTrace ? "bi-eye-slash" : "bi-eye")"></i>
+                                </button>
+                            </td>
+                            <td title="DELETE AFTER @item.DeleteAfter.ToString("dd MMM yyyy")">
+                                @item.DateTime.ToString("dd MMM yyyy HH:mm 'UTC'")
+                            </td>
+                            <td>
+                                <pre class="white-space-pre-wrap">@item.Message.ToMarkupString()</pre>
+                            </td>
+                            <td>
+                                @item.ErrorMessage
+                            </td>
+                        </tr>
+                        @if (item.ShowStackTrace)
+                        {
+                            <tr>
+                                <td colspan="5">
+                                    <pre class="ms-3" style="white-space: pre-wrap;">@item.StackTrace</pre>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+
+            <div class="d-flex flex-wrap justify-content-around">
+
+                <button @onclick="deleteAll" class="btn btn-danger">Delete all</button>
+                <button @onclick="deleteUnselected" class="btn btn-outline-danger">Delete unselected</button>
+                <button @onclick="deleteSelected" class="btn btn-outline-danger">Delete selected</button>
+            </div>
+        }
+        else
+        {
+            <Spinner />
+        }
+    </MainContent>
+</SplitContainer>
+
+
+
+<ConfirmDialog @ref="confirmDialog" />
+
+@code {
+    //added
+
+    ConfirmDialog confirmDialog;
+    List<LogItem> logItems;
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+
+    async Task delete(int[] ids, bool deleteSelected)
+    {
+        string msg = deleteSelected ? "Delete SELECTED?" : "Delete UNselected?";
+
+        bool confirmed = await confirmDialog.ConfirmAsync(msg);
+
+        if (!confirmed) return;
+
+        HttpResponseMessage response = await client_.PostAsJsonAsync<int[]>("api/dev/delete-log-items-by-id", ids);
+
+        var contentStr = await response.Content.ReadAsStringAsync();
+
+        if (response.IsSuccessStatusCode)
+        {
+            notificationService.Notify(contentStr);
+
+            Dictionary<int, bool> idsDict = ids.ToDictionary(k => k, v => false);
+
+            for (int i = logItems.Count - 1; i >= 0; i--)
+            {
+                var curr = logItems[i];
+
+                if (idsDict.ContainsKey(curr.Id)) logItems.Remove(curr);
+            }
+        }
+        else
+        {
+            notificationService.NotifyError(contentStr);
+        }
+    }
+
+    async Task deleteAll()
+    {
+        //todo DOCS use this method on LogItemsPage to demonstrate NotificationService in a vid
+        var confirmed = await confirmDialog.ConfirmAsync("Delete ALL?");
+
+        if (!confirmed) return;
+
+        HttpResponseMessage response = await client_.PostAsync("api/dev/delete-all-logitems", null);
+
+        var contentStr = await response.Content.ReadAsStringAsync();
+
+        if (response.IsSuccessStatusCode)
+        {
+            notificationService.Notify(contentStr);
+            nav_.NavigateTo("dev/dashboard");
+        }
+        else
+        {
+            notificationService.NotifyError(contentStr);
+        }
+    }
+
+    async Task deleteSelected()
+    {
+        await delete(logItems.Where(m => m.Selected).Select(m => m.Id).ToArray(), true);
+    }
+
+    async Task deleteUnselected()
+    {
+        await delete(logItems.Where(m => m.Selected == false).Select(m => m.Id).ToArray(), false);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await client_.GetFromJsonAsync<List<LogItem>>("api/dev/get-logitems");
+
+        if (result != null) logItems = result;
+    }
+
+    void selectDeselectAllChanged(ChangeEventArgs args)
+    {
+        bool.TryParse(args.Value.ToString(), out bool _selectAll);
+
+        foreach (var item in logItems)
+        {
+            item.Selected = _selectAll;
+        }
+    }
+}

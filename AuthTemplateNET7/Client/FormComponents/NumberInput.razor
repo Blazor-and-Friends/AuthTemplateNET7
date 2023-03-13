@@ -1,0 +1,51 @@
+﻿@using AuthTemplateNET7.Client.FormComponents.Internals
+@typeparam TNullableNumber
+@inherits BaseInput<TNullableNumber>
+
+<div class="mb-3">
+    <LableHelper InputId="@id" LabelText="@DisplayName" Required="Required" />
+
+    <input
+        @attributes="AdditionalAttributes"
+        @bind="CurrentValueAsString"
+        class="@getClassList() @CssClass"
+        id="@id"
+        inputmode="decimal"
+        placeholder="@Placeholder"
+        select-all
+        type="number"/>
+
+    @if (ValidationFor != null)
+    {
+        <ValidationMessage For="ValidationFor" />
+    }
+    @if(FormText != null)
+    {
+        <div class="form-text ms-2">
+            @FormText
+        </div>
+    }
+</div>
+
+@code {
+    //added
+
+    /*
+     * Works with byte, decimal, double, float, int, long
+     */
+
+    protected override bool TryParseValueFromString(string value, out TNullableNumber result, out string validationErrorMessage)
+    {
+        if(BindConverter.TryConvertTo(value, System.Globalization.CultureInfo.InvariantCulture, out result))
+        {
+            validationErrorMessage = null;
+            return true;
+        }
+        else
+        {
+            string name = DisplayName ?? FieldIdentifier.FieldName;
+            validationErrorMessage = $"Could not parse {name}";
+            return false;
+        }
+    }
+}

@@ -1,0 +1,106 @@
+﻿@typeparam TTarget
+@inherits InputBase<TTarget>
+
+<select @attributes="AdditionalAttributes"
+        @onchange="valueChanged"
+        class="form-select @CssClass">
+    <option disabled="@Required">@Placeholder</option>
+
+    @foreach (var item in OptionElements)
+    {
+        if (item.Key == CurrentValueAsString)
+        {
+            <option value="@item.Key" selected>@item.Value</option>
+        }
+        else
+        {
+            <option value="@item.Key">@item.Value</option>
+        }
+    }
+</select>
+
+@code {
+    //added
+
+    [Parameter] public Dictionary<string, string> OptionElements { get; set; }
+
+    [Parameter] public string PassedInValue { get; set; }
+
+    [Parameter] public string Placeholder { get; set; }
+
+    [Parameter] public bool Required { get; set; }
+
+    bool isNullable;
+    Type type;
+
+    protected override string FormatValueAsString(TTarget value)
+    {
+        if (CurrentValue == null) return "";
+
+        if (type == typeof(int))
+        {
+            return ((int)(object)CurrentValue).ToString();
+        }
+        else if (type == typeof(Guid))
+        {
+            return ((Guid)(object)CurrentValue).ToString();
+        }
+        else if (type == typeof(long))
+        {
+            return ((long)(object)CurrentValue).ToString();
+        }
+        else
+        {
+            throw new NotSupportedException("ONLY int, Guid, AND long TYPES ARE SUPPORTED BY AUTOMATICALLY GENERATED SELECT INPUTS.");
+        }
+
+    }
+
+    protected override void OnInitialized()
+    {
+        type = Nullable.GetUnderlyingType(typeof(TTarget));
+        updateCurrentValue(CurrentValue?.ToString());
+        isNullable = type == null;
+        if (type == null) type = typeof(TTarget);
+    }
+
+    protected override void OnParametersSet()
+    {
+        updateCurrentValue(PassedInValue);
+        base.OnParametersSet();
+    }
+
+
+
+    protected override bool TryParseValueFromString(string value, out TTarget result, out string validationErrorMessage)
+    {
+        throw new NotImplementedException();
+    }
+
+    void updateCurrentValue(string value)
+    {
+        if (Guid.TryParse(value, out var _guid))
+        {
+            CurrentValue = (TTarget)(object)_guid;
+
+        }
+        else if (int.TryParse(value, out var _int))
+        {
+            CurrentValue = (TTarget)(object)_int;
+        }
+        else if (long.TryParse(value, out var _long))
+        {
+            CurrentValue = (TTarget)(object)_long;
+        }
+        else
+        {
+            CurrentValue = (TTarget)(object)null;
+        }
+    }
+
+    void valueChanged(ChangeEventArgs args)
+    {
+        var val = args.Value.ToString();
+        updateCurrentValue(val);
+    }
+}

@@ -1,0 +1,119 @@
+﻿<div
+    @onkeyup="keyPressed"
+    aria-hidden="@ariaHidden"
+    aria-labelledby="@ariaLabelledById"
+    class="c-viewport-mask fade @showCss"
+    role="alertdialog"
+    style="z-index: @zIndex;"
+    tabindex="-1">
+
+    <div class="c-fixed-center-center" style="z-index: @((zIndex + 1).ToString());">
+
+        <div class="modal-dialog">
+
+            <div class="modal-content">
+
+                @if (modalTitle != null)
+                {
+                    <div class="modal-header">
+                        <h5 id="@modalTitleId" class="modal-title fw-bold">
+                            @modalTitle
+                        </h5>
+                        <button type="button"
+                            @onclick="() => buttonClicked(false)"
+                            class="btn-close"
+                            aria-label="Close">
+                        </button>
+                    </div>
+                }
+
+                <div id="@modalBodyId" class="modal-body">
+                    @modalMessage.ToMarkupString()
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button"
+                        @onclick="() => buttonClicked(true)"
+                        class="btn btn-outline-success">
+                            @modalOkButton
+                    </button>
+
+                    <button type="button"
+                        @onclick="() => buttonClicked(false)"
+                        class="btn btn-outline-danger">
+                            @modalCancelButton
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+@code {
+    //added
+
+    string ariaHidden = "true";
+    //if there's no Title supplied, use the body for tha aria-labelledby
+    string ariaLabelledById;
+    string modalBodyId = StringHelpers.GenerateRandomString();
+    string modalTitleId = StringHelpers.GenerateRandomString();
+
+    string modalCancelButton;
+    string modalOkButton;
+    string modalMessage;
+    string modalTitle;
+    bool result;
+    string showCss;
+    bool waitingForResponse = true;
+    int zIndex = -100;
+
+    /// <summary>
+    /// Shows a modal confirm dialog box
+    /// </summary>
+    /// <param name="htmlMessage">The message you want the user to see. Can be HTML</param>
+    /// <param name="title">The title of the modal. Default is null</param>
+    /// <param name="confirmButtonText">The text for the confirm button. Default is "Yes"</param>
+    /// <param name="cancelButtonText">The text for the cancel button. Default is "No"</param>
+    /// <returns>Whether the user clicked the confirm button</returns>
+    public async Task<bool> ConfirmAsync(string htmlMessage, string title = null, string confirmButtonText = "Yes", string cancelButtonText = "No")
+    {
+        if (title == null) ariaLabelledById = modalBodyId;
+        else ariaLabelledById = modalTitleId;
+        ariaHidden = "false";
+
+        modalCancelButton = cancelButtonText;
+        modalOkButton = confirmButtonText;
+        modalMessage = htmlMessage;
+        modalTitle = title;
+        zIndex = 100;
+        showCss = "show";
+        StateHasChanged();
+
+        while (waitingForResponse) await Task.Delay(100);
+
+        showCss = null;
+        StateHasChanged();
+        await Task.Delay(100); //wait for the fade
+        zIndex = -100;
+        StateHasChanged();
+
+        waitingForResponse = true;
+
+        return result;
+    }
+
+    void buttonClicked(bool confirmed)
+    {
+        ariaHidden = "true";
+        result = confirmed;
+        waitingForResponse = false;
+    }
+
+    void keyPressed(KeyboardEventArgs args)
+    {
+
+        if (args.Key == "Escape") buttonClicked(false);
+    }
+}

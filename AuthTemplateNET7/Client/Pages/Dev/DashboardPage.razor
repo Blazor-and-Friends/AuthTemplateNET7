@@ -1,0 +1,18 @@
+﻿@page "/dev/dashboard"
+@using AuthTemplateNET7.Client.Components
+@attribute [Authorize(Roles = "Dev")]
+
+<PageTitleAndHeader Title="Dev - Dashboard" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftDev />
+    </LeftPane>
+    <MainContent>
+        <a href="https://stackoverflow.com/questions/61662274/handling-api-validation-errors-in-blazor-webassembly">Handling server validation errors</a>
+    </MainContent>
+</SplitContainer>
+
+@code {
+    //added
+}

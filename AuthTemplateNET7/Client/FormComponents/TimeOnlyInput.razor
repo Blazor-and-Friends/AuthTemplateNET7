@@ -1,0 +1,75 @@
+﻿@using AuthTemplateNET7.Client.FormComponents.Internals
+@using System.Globalization
+@typeparam TValue
+@inherits BaseInput<TValue>
+
+<div class="mb-3">
+    <LableHelper InputId="@id" LabelText="@DisplayName" Required="@Required" />
+    <input
+        @attributes="AdditionalAttributes"
+        @onchange="valueChanged"
+        class="@getClassList() @CssClass"
+        id="@id"
+        placeholder="@Placeholder"
+        type="time"
+        value="@CurrentValueAsString" />
+
+    @if (ValidationFor != null)
+    {
+        <ValidationMessage For="ValidationFor" />
+    }
+
+    @if (FormText != null)
+    {
+        <div class="form-text ms-2">
+            @FormText
+        </div>
+    }
+</div>
+
+@code {
+    //added
+
+    Type type;
+
+    protected override string FormatValueAsString(TValue value)
+    {
+        if (CurrentValue == null) return "";
+
+        TimeOnly timeOnly = (TimeOnly)(object)CurrentValue;
+        return timeOnly.ToString("HH:mm:ss");
+    }
+
+    protected override void OnInitialized()
+    {
+        type = Nullable.GetUnderlyingType(typeof(TValue)) ?? typeof(TimeOnly);
+    }
+
+    protected override bool TryParseValueFromString(string value, out TValue result, out string validationErrorMessage)
+    {
+        if (BindConverter.TryConvertTo(value, CultureInfo.InvariantCulture, out result))
+        {
+            validationErrorMessage = null;
+            return true;
+        }
+        else
+        {
+            string name = DisplayName ?? FieldIdentifier.FieldName;
+            validationErrorMessage = $"Could not parse {name}";
+            return false;
+        }
+    }
+
+    void valueChanged(ChangeEventArgs args)
+    {
+        var val = args.Value.ToString();
+        if(TimeOnly.TryParse(val, out var _result))
+        {
+            CurrentValue = (TValue)(object)_result;
+        }
+        else
+        {
+            CurrentValue = (TValue)(object)null;
+        }
+    }
+}

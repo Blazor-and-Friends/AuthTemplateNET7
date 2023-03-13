@@ -1,0 +1,52 @@
+﻿@page "/admin/settings"
+@using AuthTemplateNET7.Shared.PublicModels.SiteSettingModels.Models;
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient client_
+@inject NavigationManager nav_
+
+<PageTitleAndHeader Title="Admin Settings" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftAdmin />
+    </LeftPane>
+    <MainContent>
+        @if(settings != null)
+        {
+            <EditFormWrapper Model="settings" OnValidSubmit="validSubmit" SubmitButtonText="Save changes">
+                <FormFactory Model="settings" />
+            </EditFormWrapper>
+        }
+        else
+        {
+            <Spinner />
+        }
+    </MainContent>
+</SplitContainer>
+
+@code {
+    //added
+
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+    AdminSettings settings;
+
+    protected override async Task OnInitializedAsync()
+    {
+        settings = await client_.GetFromJsonAsync<AdminSettings>("api/admin/get-settings");
+    }
+
+    async Task validSubmit()
+    {
+        var response = await client_.PostAsJsonAsync<AdminSettings>("api/admin/update-settings", settings);
+
+        if (response.IsSuccessStatusCode)
+        {
+            notificationService.Notify("Settings saved");
+            nav_.NavigateTo("admin/dashboard");
+        }
+        else
+        {
+            await notificationService.NotifyNonSuccessResponseAsync(response);
+        }
+    }
+}

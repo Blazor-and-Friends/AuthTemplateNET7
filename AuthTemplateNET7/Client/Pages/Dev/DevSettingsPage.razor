@@ -1,0 +1,49 @@
+﻿@page "/dev/settings"
+@using AuthTemplateNET7.Shared.PublicModels.SiteSettingModels.Models.DevSettings;
+@attribute [Authorize(Roles = "Dev")]
+@inject HttpClient client_
+@inject NavigationManager nav_
+
+<PageTitleAndHeader Title="Dev Settings" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftDev />
+    </LeftPane>
+
+    <MainContent>
+        @if(settings != null)
+        {
+            <EditFormWrapper Model="settings" OnValidSubmit="validSubmit" SubmitButtonText="Save changes">
+                <FormFactory Model="settings" />
+            </EditFormWrapper>
+        }
+    </MainContent>
+</SplitContainer>
+
+
+@code {
+    //added
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+    DevSettings settings;
+
+    protected override async Task OnInitializedAsync()
+    {
+        settings = await client_.GetFromJsonAsync<DevSettings>("api/dev/get-settings");
+    }
+
+    async Task validSubmit()
+    {
+        var response = await client_.PostAsJsonAsync<DevSettings>("api/dev/update-settings", settings);
+
+        if (response.IsSuccessStatusCode)
+        {
+            notificationService.Notify("Settings updated");
+            nav_.NavigateTo("dev/dashboard");
+        }
+        else
+        {
+            await notificationService.NotifyNonSuccessResponseAsync(response);
+        }
+    }
+}

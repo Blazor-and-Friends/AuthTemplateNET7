@@ -1,0 +1,152 @@
+﻿@using AuthTemplateNET7.Client.Components
+@using AuthTemplateNET7.Shared.SharedServices
+@using System.Reflection
+@inject IJSRuntime js_
+@inject NavigationManager nav_
+
+<EditForm Model="Model" OnInvalidSubmit="invalidSubmit" OnValidSubmit="validSubmit" id="@formId" @attributes="AdditionalAttributes" novalidate>
+    <DataAnnotationsValidator />
+
+    @if (ShowRequiredFieldsReminder)
+    {
+        <div class="fst-italic mb-3">
+            <span class="text-danger me-2">*</span> Indicates required fields
+        </div>
+    }
+
+    @if(showingValidationSummary)
+    {
+        <ValidationSummary />
+    }
+
+    @ChildContent
+
+    @if (DisplaySubmitButton)
+    {
+        <SubmitButton @ref="submitButton" Text="@submitButtonText" />
+    }
+
+</EditForm>
+
+<ConfirmDialog @ref="confirmDialog" />
+<NavigationLock ConfirmExternalNavigation="ConfirmExternalNavigation" OnBeforeInternalNavigation="beforeNavigation" />
+
+@code {
+    //added
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object> AdditionalAttributes { get; set; }
+
+    /// <summary>
+    /// Optional. If true, sets the focus on the first input/textarea/select element in the form. Disable on second/third/etc if you have multiple EditFormWrappers on the same page. Default is true.
+    /// </summary>
+    [Parameter] public bool AutoFocusFirstElement { get; set; } = true;
+
+    /// <summary>
+    /// The markup in the form
+    /// </summary>
+    [EditorRequired, Parameter] public RenderFragment ChildContent { get; set; }
+
+    /// <summary>
+    /// Optional. Confirms the user wants to navigate away from the website. Default is false.
+    /// </summary>
+    [Parameter] public bool ConfirmExternalNavigation { get; set; } = false;
+
+    /// <summary>
+    /// Optional. Confirms the user wants to navigate away from the form. Default is false.
+    /// </summary>
+    [Parameter] public bool ConfirmInternalNavigation { get; set; } = false;
+
+    /// <summary>
+    /// Optional. If true, displays a submit button for your form. Default is true.
+    /// </summary>
+    [Parameter] public bool DisplaySubmitButton { get; set; } = true;
+
+    [EditorRequired, Parameter] public object Model { get; set; }
+
+    [Parameter]public EventCallback OnInvalidSubmit { get; set; }
+
+    //todo we need to look at what happens if OnValidSubmit is not supplied in EditFormWrapper
+    [EditorRequired, Parameter] public EventCallback OnValidSubmit { get; set; }
+    //[Parameter] public EventCallback OnValidSubmit { get; set; }
+
+    /// <summary>
+    /// Optional. Shows a reminder at the top of the form that a red asterisk means the field is required. Default is false.
+    /// </summary>
+    [Parameter] public bool ShowRequiredFieldsReminder { get; set; }
+
+    /// <summary>
+    /// Optional. Displays a validation summary OnInvalidSubmit. Default is false.
+    /// </summary>
+    [Parameter] public bool ShowValidationSummary { get; set; }
+
+    /// <summary>
+    /// Optional. The text for the submit button. Default is "Submit"
+    /// </summary>
+    [Parameter] public string SubmitButtonText { get; set; }
+
+    #region private
+
+    ConfirmDialog confirmDialog;
+    string formId = StringHelpers.GenerateRandomString();
+    IJSObjectReference module;
+    bool showingValidationSummary;
+    SubmitButton submitButton;
+    string submitButtonText = "Submit";
+
+    async Task beforeNavigation(LocationChangingContext context)
+    {
+        if (!ConfirmInternalNavigation) return;
+
+        var yes = await confirmDialog.ConfirmAsync("Are you sure you want to navigate away from this page? You may have unsaved changes.", "Confirm navigation", "Yes", "No");
+
+        if (!yes) context.PreventNavigation();
+    }
+
+    async Task invalidSubmit()
+    {
+        if (ShowValidationSummary) showingValidationSummary = true;
+
+        await js_.InvokeVoidAsync("tf.scrollToElementById", formId);
+
+        if (OnInvalidSubmit.HasDelegate)
+        {
+            await OnInvalidSubmit.InvokeAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && AutoFocusFirstElement)
+        {
+            //for some reason the in oninitialized doesn't wait
+            while (module == null) await Task.Delay(10);
+            await module.InvokeVoidAsync("focusFirstInput", formId);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        module = await js_.InvokeAsync<IJSObjectReference>("import", "./FormComponents/EditFormWrapper.razor.js");
+
+        //for some reason the await above doesn't wait
+        while (module == null) await Task.Delay(10);
+
+        await module.InvokeVoidAsync("loadFormFunctions");
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(SubmitButtonText)) submitButtonText = SubmitButtonText;
+    }
+
+    async Task validSubmit()
+    {
+        submitButton.Disable();
+        await OnValidSubmit.InvokeAsync();
+        submitButton.Enable();
+        StateHasChanged();
+    }
+
+    #endregion //private
+}

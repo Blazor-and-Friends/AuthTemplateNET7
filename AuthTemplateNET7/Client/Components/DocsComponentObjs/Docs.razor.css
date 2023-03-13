@@ -1,0 +1,35 @@
+.docs-container {
+    display: inline-flex;
+    flex-direction: row;
+    max-height: 100vh;
+    overflow: hidden;
+}
+
+.docs-main{
+    overflow-y: scroll;
+}
+
+.docs-nav {
+    overflow-y: scroll;
+    margin: 0;
+    padding: 0.5rem;
+    min-width: max-content;
+    list-style: none;
+}
+
+
+
+.docs-nav-container {
+    overflow-y: scroll;
+    margin-right: .5rem;
+    min-width: max-content;
+}
+
+.docs-nav-items {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    min-width: max-content;
+}

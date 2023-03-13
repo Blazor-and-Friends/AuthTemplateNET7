@@ -1,0 +1,58 @@
+﻿@page "/membership/my-logins"
+@using AuthTemplateNET7.Shared.PublicModels;
+@attribute [Authorize]
+@inject HttpClient client_;
+
+<PageTitleAndHeader Title="My logins" />
+
+@if (logins != null)
+{
+    <table class="table table-sm table-responsive">
+        <tbody>
+            @foreach (var item in logins)
+            {
+                <tr class="@item.CssClass">
+                    <td>@item.Result</td>
+                    <td>@item.DateTime.ToString("HH:mm 'UTC' '-' dd MMM yyyy")</td>
+                    <td>
+                        @item.IpAddress.ToIpLookupLink()
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="d-flex justify-content-center">
+        @if(showSpinner)
+        {
+            <span class="spinner-border" role="status"></span>
+        }
+        <span class="ms-3">@msg</span>
+    </div>
+}
+
+@code {
+    //added
+
+
+    Login[] logins;
+    string msg = "Loading logins...";
+    bool showSpinner = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //await Task.Delay(3000);
+        var result = await client_.GetFromJsonAsync<Login[]>("api/membership/get-my-logins");
+        if(result == null || result.Length < 1)
+        {
+            msg = "There was a problem getting your logins or you don't have any recent logins.";
+            showSpinner = false;
+        }
+        else
+        {
+            logins = result;
+        }
+    }
+}

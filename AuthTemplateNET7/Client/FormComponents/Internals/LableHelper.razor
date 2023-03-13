@@ -1,0 +1,24 @@
+﻿<label for="@InputId" class="form-label fw-bold" title="@title">
+    @LabelText
+    @if(Required)
+    {
+        <span class="text-danger fst-italic ms-1">*</span>
+    }
+</label>
+
+@code {
+    //added
+
+    [EditorRequired, Parameter] public string InputId { get; set; }
+
+    [EditorRequired, Parameter] public string LabelText { get; set; }
+
+    [EditorRequired, Parameter] public bool Required { get; set; }
+
+    string title;
+
+    protected override void OnParametersSet()
+    {
+        if (Required) title = "Required";
+    }
+}

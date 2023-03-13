@@ -1,0 +1,159 @@
+﻿@page "/dev/environment-variables"
+@using AuthTemplateNET7.Client.Components;
+@attribute [Authorize(Roles = "Dev")]
+@inject HttpClient client_
+@inject NavigationManager nav_
+
+<PageTitleAndHeader Title="Environment variables" />
+
+<div>
+    <a href="https://www.howtogeek.com/787217/how-to-edit-environment-variables-on-windows-10-or-11/">How to set/remove environment variables in Windows 11</a>
+</div>
+
+<button @onclick="getAllSettings" class="btn btn-primary">Get all environment settings</button>
+
+@if (pageModel != null)
+{
+    <button @onclick="updateSettings" class="btn btn-warning">Update environment variables</button>
+    <div class="d-flex justify-content-center">
+        <table class="table table-sm table-responsive">
+            <tbody>
+
+                <tr>
+                    <th colspan="4"><h2 class="text-center text-danger">User</h2></th>
+                </tr>
+                <tr>
+                    <th>Delete</th>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th>Update</th>
+                </tr>
+                @foreach (var item in pageModel.UserSettings)
+                {
+                    <tr>
+                        <td title="Delete this variable">
+                            <input type="checkbox" @bind-value="item.Delete" />
+                        </td>
+                        <td>@item.Key</td>
+                        <td>
+                            <textarea @bind="item.Value" class="form-control"></textarea>
+                        </td>
+                        <td title="Update this variable">
+                            <input type="checkbox" @bind-value="item.Update" />
+                        </td>
+                    </tr>
+                }
+
+                <tr>
+                    <th colspan="4"><h2 class="text-center text-danger">Process</h2></th>
+                </tr>
+                <tr>
+                    <th>Delete</th>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th>Update</th>
+                </tr>
+                @foreach (var item in pageModel.ProcessSettings)
+                {
+                    <tr>
+                        <td title="Delete this variable">
+                            <input type="checkbox" @bind-value="item.Delete" />
+                        </td>
+                        <td>@item.Key</td>
+                        <td>
+                            <textarea @bind="item.Value" class="form-control"></textarea>
+                        </td>
+                        <td title="Update this variable">
+                            <input type="checkbox" @bind-value="item.Update" />
+                        </td>
+                    </tr>
+                }
+
+                <tr>
+                    <th colspan="4"><h2 class="text-center text-danger">Machine</h2></th>
+                </tr>
+                <tr>
+                    <th>Delete</th>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th>Update</th>
+                </tr>
+                @foreach (var item in pageModel.MachineSettings)
+                {
+                    <tr>
+                        <td title="Delete this variable">
+                            <input type="checkbox" @bind-value="item.Delete" />
+                        </td>
+                        <td>@item.Key</td>
+                        <td>
+                            <textarea @bind="item.Value" class="form-control"></textarea>
+                        </td>
+                        <td title="Update this variable">
+                            <input type="checkbox" @bind-value="item.Update" />
+                        </td>
+                    </tr>
+                }
+
+            </tbody>
+        </table>
+    </div>
+    <button @onclick="updateSettings" class="btn btn-warning">Update environment variables</button>
+}
+@if (showingSpinner)
+{
+    <Spinner />
+}
+
+
+@code {
+    //added
+
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+
+    EnvironmentSettingsPageModel pageModel;
+    bool showingSpinner;
+
+    async void getAllSettings()
+    {
+        //todo gonna need to set up a specific account for the website owner for sending emails. Don't want to expose username/password to dev if the website owner is using a personal email account
+
+        showingSpinner = true;
+
+        pageModel = await client_.GetFromJsonAsync<EnvironmentSettingsPageModel>("api/dev/get-all-environment-variables");
+
+        showingSpinner = false;
+        StateHasChanged();
+    }
+
+    async Task updateSettings()
+    {
+        notificationService.NotifyError("Not implemented. The action exists on the server, it currently just returns a 500");
+        var changedMachineVariables = pageModel.MachineSettings.Where(m => m.Delete || m.Update).ToArray();
+
+        var changedProcessVariables = pageModel.ProcessSettings.Where(m => m.Delete || m.Update).ToArray();
+
+        var changedUserVariables = pageModel.UserSettings.Where(m => m.Delete || m.Update).ToArray();
+
+        List<EnvironmentSettingDto> updatables = new(changedMachineVariables.Length + changedProcessVariables.Length + changedUserVariables.Length);
+
+        updatables.AddRange(changedMachineVariables);
+        updatables.AddRange(changedProcessVariables);
+        updatables.AddRange(changedUserVariables);
+
+        foreach (var item in updatables)
+        {
+            if (item.Delete) item.Value = null;
+        }
+
+        var response = await client_.PostAsJsonAsync<List<EnvironmentSettingDto>>("api/dev/set-environment-variables", updatables);
+
+        if(response.IsSuccessStatusCode)
+        {
+            notificationService.Notify("Environment variables updated");
+            nav_.NavigateTo("dev/dashboard");
+            return;
+        }
+
+        await notificationService.NotifyNonSuccessResponseAsync(response);
+    }
+}

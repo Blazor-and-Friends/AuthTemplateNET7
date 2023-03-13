@@ -1,0 +1,36 @@
+﻿@inject IJSRuntime js_
+
+<button type="button" @onmouseover="runOff" @ref="btn" class="shy-button @ClassList">
+    @Text
+</button>
+
+@code {
+    //added
+
+     /*
+     * Moves when you try to click it
+     */
+
+    [Parameter] public string ClassList { get; set; } = "btn btn-primary";
+    [Parameter] public string Text { get; set; } = "Submit";
+
+    ElementReference btn;
+    IJSObjectReference module;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await js_.InvokeAsync<IJSObjectReference>("import", "./FunComponents/ShyButton.razor.js");
+
+            while (module == null) await Task.Delay(10);
+            //await js_.InvokeVoidAsync("runAway", btn);
+        }
+    }
+
+    async void runOff()
+    {
+        while (module == null) await Task.Delay(10);
+        await js_.InvokeVoidAsync("sb.runAway", btn);
+    }
+}

@@ -1,0 +1,77 @@
+﻿@using AuthTemplateNET7.Client.FormComponents.Internals
+@typeparam TNullable
+@inherits DateBase<TNullable>
+
+<div class="mb-3">
+    <LableHelper InputId="@id" LabelText="@DisplayName" Required="Required" />
+    <input
+        @attributes="AdditionalAttributes"
+        @onchange="valueChanged"
+        class="@getClassList() @CssClass"
+        id="@id"
+        placeholder="@Placeholder"
+        type="date"
+        value="@CurrentValueAsString" />
+
+    @if (ValidationFor != null)
+    {
+        <ValidationMessage For="ValidationFor" />
+    }
+
+    @if (FormText != null)
+    {
+        <div class="form-text ms-2">
+            @FormText
+        </div>
+    }
+</div>
+
+@code {
+    //added
+
+    /*
+    * For DateOnly and DateTime structs. Renders an input[type="date"]. DateTime structs always have their time component removed
+    * @attributes needs to be placed last to overide the supplied attributes
+     */
+
+    protected override string FormatValueAsString(TNullable value)
+    {
+        if (CurrentValue == null) return "";
+
+        string result;
+
+        if (type == typeof(DateOnly))
+        {
+            DateOnly dateOnly = (DateOnly)(object)CurrentValue;
+            result = dateOnly.ToString("yyyy-MM-dd");
+        }
+        else if (type == typeof(DateTime))
+        {
+            DateTime dateTime = (DateTime)(object)CurrentValue;
+            result = dateTime.ToString("yyyy-MM-dd");
+        }
+        else
+        {
+            throw new InvalidOperationException($"The type '{type}' is not a supported type.");
+        }
+
+        return result;
+    }
+
+    void valueChanged(ChangeEventArgs args)
+    {
+        var val = args.Value.ToString();
+        if (DateOnly.TryParse(val, out DateOnly _dateOnly))
+        {
+            CurrentValue = (TNullable)(object)_dateOnly;
+        }
+        else if(DateTime.TryParse(val, out DateTime _dateTime))
+        {
+            CurrentValue = (TNullable)(object)_dateTime;
+        }
+        else
+        {
+            CurrentValue = (TNullable)(object)null;
+        }
+    }
+}

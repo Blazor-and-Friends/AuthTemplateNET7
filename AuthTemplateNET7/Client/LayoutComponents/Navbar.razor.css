@@ -1,0 +1,13 @@
+/* Darkly sets this to 1rem which is annoying when switching themes */
+.navbar {
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+}
+
+.c-nav-bar-toggler-btn-black {
+    color: black;
+}
+
+.c-nav-bar-toggler-btn-white {
+    color: white;
+}

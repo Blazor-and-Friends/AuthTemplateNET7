@@ -1,0 +1,94 @@
+﻿@inject IJSRuntime js_
+
+@if (showing)
+{
+    <div @ref="viewportMask"
+         @onclick="() => maybeHide(viewportMask)"
+         @onkeyup="hideIfEscapeKey"
+         class="c-viewport-mask fade @showCss">
+            <div @ref="container"
+                 @onclick="() => maybeHide(container)"
+                 class="c-fixed-center-center">
+                    <div>
+                        @ChildContent
+                    </div>
+            </div>
+    </div>
+}
+
+@code {
+    //added
+
+    [EditorRequired, Parameter]public RenderFragment ChildContent { get; set; }
+
+    [Parameter] public bool IsModal { get; set; }
+
+    string showCss;
+    bool showing;
+    ElementReference viewportMask;
+    ElementReference container;
+
+    public async Task HideAsync()
+    {
+        showCss = "";
+        await Task.Delay(150); //give the fade time to run
+        showing = false;
+    }
+
+    public async Task ShowAsync(string elementToFocusId = null)
+    {
+        showing = true;
+        StateHasChanged();
+        await Task.Delay(150); //for the fade in effect
+        showCss = "show";
+        StateHasChanged();
+
+        if(elementToFocusId != null)
+        {
+            //For some reason passing in an ElementReference? = null doesn't work from the JoinEmailList component, so using an element id
+            await js_.InvokeVoidAsync("tf.focusElementById", elementToFocusId);
+        }
+    }
+
+    #region helpers
+
+    int i = 1;
+    bool containerClicked;
+
+    async Task maybeHide(ElementReference el)
+    {
+        if (IsModal) return;
+
+        //courtesy https://stackoverflow.com/a/64324067/2816057
+        if (EqualityComparer<ElementReference>.Default.Equals(el, viewportMask))
+        {
+            if (containerClicked)
+            {
+                containerClicked = false;
+                return;
+            }
+            await HideAsync();
+
+            Console.WriteLine("vpm " + i);
+            i++;
+        }
+
+        if (EqualityComparer<ElementReference>.Default.Equals(el,
+                                             container))
+        {
+            containerClicked = true;
+
+            Console.WriteLine("container " + i);
+            i++;
+        }
+    }
+
+    async Task hideIfEscapeKey(KeyboardEventArgs args)
+    {
+        if (IsModal) return;
+
+        if (args.Key == "Escape") await HideAsync();
+    }
+
+    #endregion //helpers
+}

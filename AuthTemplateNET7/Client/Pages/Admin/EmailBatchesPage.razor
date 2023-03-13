@@ -1,0 +1,351 @@
+﻿@page "/admin/email-batches"
+@using AuthTemplateNET7.Shared
+@using AuthTemplateNET7.Shared.PublicModels
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient client_
+@inject NavigationManager nav_
+
+<Spinner @ref="spinner" ShowWhenInitizialed="false" />
+<ConfirmDialog @ref="confirmDialog" />
+
+<PageTitleAndHeader Title="Email Batches" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftAdmin />
+    </LeftPane>
+
+    <MainContent>
+        @if(batches != null)
+        {
+            <div>
+                <button @onclick="deleteSelected" class="btn btn-outline-danger">Delete selected</button>
+            </div>
+            <div class="d-flex justify-content-center">
+
+                @if(batches.Count == 0)
+                {
+                    <p>There are no batches</p>
+                }
+
+                <table cellpadding="6">
+                    <thead>
+                        <tr>
+                            <th>
+                                <label class="cursor-pointer">
+                                    <input @onchange="selectUnselectAllForDeletionChanged" type="checkbox" />
+                                    Delete?
+
+                                </label>
+                            </th>
+                            <th></th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Subject</th>
+                            <th class="text-end">Sent/Total/Errors</th>
+                            <th>
+                                Created/Completed<br />
+                                (Delete after)
+                            </th>
+                            <th>Body</th>
+                            <th>Emails</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in batches)
+                        {
+                            BatchStatus batchStatus = item.BatchStatus;
+                            string completedDateStr = item.DateCompleted.HasValue ?
+                                item.DateCompleted.Value.ToString("dd MMM yy")
+                                : "Pending";
+                            int errorsCount = item.ErrorsCount;
+                            <tr>
+                                <td title="Delete this batch and all the associated emails sent">
+                                    <input type="checkbox" @bind="item.Delete" />
+                                </td>
+                                <td>
+                                    @if(batchStatus != BatchStatus.Complete)
+                                    {
+                                        <button @onclick="() => pauseResumeBatch(item)" class="btn @item.PauseBtnCss" title="Pause or Resume this Batch">
+                                            <i class="bi @item.PauseBtnIconCss"></i>
+                                        </button>
+                                    }
+                                </td>
+                                <td>@batchStatus.ToString().TitleCaseToWords()</td>
+                                <td>@item.Priority</td>
+                                <td>
+                                    @item.Subject
+                                </td>
+                                <td class="text-end">
+                                    @item.SentEmailsCount / @item.TotalEmailsCount /
+                                    @if(errorsCount > 0)
+                                    {
+                                        <span class="text-danger">@errorsCount</span>
+                                    }
+                                    else
+                                    {
+                                        <span>0</span>
+                                    }
+                                </td>
+                                <td title="DELETE AFTER @item.DeleteAfter.ToString("dd MMM yyyy")">
+                                    @item.DateCreated.ToString("dd MMM yy") / @completedDateStr
+                                </td>
+                                <td>
+                                    <button @onclick="() => item.ShowingBody = !item.ShowingBody" class="btn btn-info">
+                                        @if(item.ShowingBody)
+                                        {
+                                            <span>Hide body</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Show body</span>
+                                        }
+                                    </button>
+                                </td>
+                                <td>
+                                    <button @onclick="() => getSentEmails(item)" class="btn btn-info">
+                                        @if(item.ShowingEmails)
+                                        {
+                                            <span>Hide sent emails</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Show sent emails</span>
+                                        }
+                                    </button>
+                                </td>
+                            </tr>
+
+                            @if(item.ShowingBody)
+                            {
+                                <tr>
+                                    <td colspan="9">
+                                        <Hr />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td colspan="8">
+                                        @item.Body.ToMarkupString()
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="9">
+                                        <Hr />
+                                    </td>
+                                </tr>
+                            }
+                            @if(item.ShowingEmails)
+                            {
+                                <tr>
+                                    <td colspan="9">
+                                        <table cellpadding="6" class="ms-4">
+                                            <tr>
+                                                <td colspan="4">
+                                                    <Hr />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th>To</th>
+                                                <th>Name?</th>
+                                                <th>Status</th>
+                                                <th>Sent</th>
+                                            </tr>
+                                            @foreach (var e in item.Emails)
+                                            {
+                                                string toAddress = e.ToAddress;
+                                                string dateSentStr = e.DateSent.HasValue ? e.DateSent.Value.ToString("HH:mm 'UTC' dd MMM yy") : "";
+                                                <tr>
+                                                    <td>
+                                                        <a href="mailto:@toAddress">@toAddress</a>
+                                                    </td>
+                                                    <td>@e.ToName</td>
+                                                    <td>
+                                                        @if (e.EmailSendResult == EmailSendResult.Error)
+                                                        {
+                                                            <span class="text-danger">Error</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@e.EmailSendResult</span>
+                                                        }
+                                                    </td>
+                                                    <td>@dateSentStr</td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <td colspan="4">
+                                                    <Hr />
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <button @onclick="deleteSelected" class="btn btn-outline-danger">Delete selected</button>
+            </div>
+        }
+    </MainContent>
+</SplitContainer>
+
+@code {
+    //added
+
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+
+    List<EmailBatch> batches;
+    ConfirmDialog confirmDialog;
+    Spinner spinner;
+
+    EmailBatch createCopyWithoutEmails(EmailBatch model)
+    {
+        //todo hack for some reason it's complaining about SentEmail.EmailSendResult not being a string... something something. Make a copy of the batch without the emails.
+
+        return new EmailBatch
+        {
+            Id = model.Id,
+            BatchStatus = model.BatchStatus,
+            Body = model.Body,
+            DateCompleted = model.DateCompleted,
+            DateCreated = model.DateCreated,
+            DeleteAfter = model.DeleteAfter,
+            ErrorsCount = model.ErrorsCount,
+            Priority = model.Priority,
+            SentEmailsCount = model.SentEmailsCount,
+            Subject = model.Subject,
+            TotalEmailsCount = model.TotalEmailsCount
+        };
+    }
+
+    async Task deleteSelected()
+    {
+        int[] ids = batches.Where(m => m.Delete).Select(m => m.Id).ToArray();
+
+        if(ids.Length == 0)
+        {
+            notificationService.Notify("You don't have any Email Batches selected for deletion");
+            return;
+        }
+
+        string es = ids.Length > 1 ? "es" : "";
+
+        var yes = await confirmDialog.ConfirmAsync($"Are you sure you want to delete {ids.Length} batch{es}?", "Confirm Delete");
+
+        if (!yes) return;
+
+        spinner.ShowSpinner($"Deleting {ids.Length} batch{es}");
+
+        var response = await client_.PostAsJsonAsync<int[]>("api/admin/delete-email-batches-by-ids", ids);
+
+        var contentStr = await response.Content.ReadAsStringAsync();
+
+        spinner.HideSpinner();
+
+        if (response.IsSuccessStatusCode)
+        {
+            notificationService.Notify(contentStr);
+
+            if(ids.Length < batches.Count)
+            {
+                var idsDict = ids.ToDictionary(k => k, v => false);
+
+                for (int i = batches.Count - 1; i >= 0; i--)
+                {
+                    var curr = batches[i];
+                    if (idsDict.ContainsKey(curr.Id)) batches.Remove(curr);
+                }
+            }
+            else
+            {
+                nav_.NavigateTo("admin/dashboard");
+            }
+        }
+        else notificationService.NotifyError(contentStr);
+    }
+
+    async Task getSentEmails(EmailBatch batch)
+    {
+        if (batch.ShowingEmails)
+        {
+            batch.ShowingEmails = false;
+            return;
+        }
+
+        if(batch.Emails != null)
+        {
+            batch.ShowingEmails = true;
+            return;
+        }
+
+        spinner.ShowSpinner(message: $"Fetching emails for {batch.Subject}", false);
+
+        var result = await client_.GetFromJsonAsync<List<Email>>($"api/admin/get-emails-for-batch/{batch.Id}");
+
+        if(result != null)
+        {
+            batch.Emails = result;
+            batch.ShowingEmails = true;
+        }
+
+        spinner.HideSpinner();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        while (spinner == null) await Task.Delay(10);
+
+        spinner.ShowSpinner(maskViewport: false);
+        batches = await client_.GetFromJsonAsync<List<EmailBatch>>("api/admin/get-email-batches");
+
+        spinner.HideSpinner();
+    }
+
+    async Task pauseResumeBatch(EmailBatch batch)
+    {
+        spinner.ShowSpinner($"Updating batch with subject \"{batch.Subject}\"", false);
+
+        //todo hack for some reason it's complaining about SentEmail.EmailSendResult not being a string... something something. Make a copy of the batch without the emails.
+        var copy = createCopyWithoutEmails(batch);
+
+        var response = await client_.PostAsJsonAsync<EmailBatch>("api/admin/pause-or-resume-batch", copy);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string msg;
+            if (batch.BatchStatus == BatchStatus.InProgress)
+            {
+                msg = "Batch paused";
+                batch.BatchStatus = BatchStatus.Paused;
+            }
+            else
+            {
+                msg = "Batch resumed";
+                batch.BatchStatus = BatchStatus.InProgress;
+            }
+
+            spinner.HideSpinner();
+            notificationService.Notify(msg);
+
+            return;
+        }
+        spinner.HideSpinner();
+
+        await notificationService.NotifyNonSuccessResponseAsync(response);
+    }
+
+    void selectUnselectAllForDeletionChanged(ChangeEventArgs args)
+    {
+        bool.TryParse(args.Value.ToString(), out bool isChecked);
+
+        foreach (var item in batches)
+        {
+            item.Delete = isChecked;
+        }
+    }
+}

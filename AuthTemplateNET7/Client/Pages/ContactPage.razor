@@ -1,0 +1,46 @@
+﻿@page "/contact"
+@using AuthTemplateNET7.Client.Components
+@using AuthTemplateNET7.Client.FormComponents
+@using AuthTemplateNET7.Shared.PublicModels
+@inject HttpClient client_
+
+<PageTitleAndHeader Title="Contact" MetaDescription="Contact us" />
+
+@if (showBellCommercial)
+{
+    <div class="d-flex justify-content-center">
+        <iframe width="50" height="28" src="https://www.youtube-nocookie.com/embed/HO17B-ACRn0?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    </div>
+}
+
+<EditFormWrapper Model="contact" OnValidSubmit="validSubmit">
+
+    <FormFactory Model="contact" />
+
+</EditFormWrapper>
+
+@code {
+    //added
+
+    ContactMessage contact = new();
+    [Parameter] public NotificationService notificationService { get; set; }
+    bool showBellCommercial = true;
+
+
+    async void validSubmit()
+    {
+        var response = await client_.PostAsJsonAsync<ContactMessage>("api/interaction/post-message", contact);
+
+        if (response.IsSuccessStatusCode)
+        {
+            notificationService.Notify("Your message has been received! Thank you.");
+            contact = new();
+        }
+        else
+        {
+            await notificationService.NotifyNonSuccessResponseAsync(response);
+        }
+    }
+
+    //todo either a contact model in db or obfuscation to help foil bots. If you implement the Contact model, might want recaptcha
+}

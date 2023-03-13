@@ -1,0 +1,42 @@
+﻿@using AuthTemplateNET7.Shared.SharedServices
+
+<li @onfocusout="hideDropdown" class="nav-item dropdown">
+
+    <button type="button" @onclick="toggleDropdown" class="btn btn-link nav-link dropdown-toggle" id="@id" role="button" aria-expanded="@showingDropdown.ToString().ToLower()">
+        @LinkText
+    </button>
+
+    <ul class="dropdown-menu @css" aria-labelledby="@id">
+        @ChildContent
+    </ul>
+</li>
+
+@code {
+    /*
+     * Convenience component for wrapping Bootstrap's nav dropdown menu. In ChildContent, you can use the NavbarDropdownItem component
+     */
+
+    /// <summary>
+    /// Required. li's > navlinks to display
+    /// </summary>
+    [EditorRequired, Parameter] public RenderFragment ChildContent { get; set; }
+
+    /// <summary>
+    /// Required. The text the user will click to display the dropdown menu
+    /// </summary>
+    [EditorRequired, Parameter] public string LinkText { get; set; }
+
+    string css => showingDropdown ? "show" : null;
+    string id = StringHelpers.GenerateRandomString();
+    bool showingDropdown = false;
+
+    async Task hideDropdown()
+    {
+        await Task.Delay(500); //needed or else the navigation won't get triggered
+        showingDropdown = false;
+    }
+
+    void toggleDropdown() => showingDropdown = !showingDropdown;
+
+
+}

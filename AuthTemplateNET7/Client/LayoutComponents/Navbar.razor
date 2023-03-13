@@ -1,0 +1,71 @@
+﻿@using AuthTemplateNET7.Client.Pages.Admin
+@using AuthTemplateNET7.Client.Pages.Dev
+@inject IJSRuntime js_
+
+<nav class="navbar navbar-expand-lg container-fluid @navbarShadowCss">
+    <div class="container-fluid">
+        <NavLink href="" Match="NavLinkMatch.All" class="navbar-brand">AuthTemplateNET7</NavLink>
+        <button type="button" @onclick="toggleNavMenu" aria-controls="navbar" aria-expanded="@collapseNavMenu.ToString().ToLower()" class="navbar-toggler @togglerBtnCss" aria-label="Toggle navigation">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="@navBarCollapsedCss navbar-collapse" id="navbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <NavLink @onclick="toggleNavMenu" href="" Match="NavLinkMatch.All" class="nav-link">Home</NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink @onclick="toggleNavMenu" href="test-page" class="nav-link">Test page</NavLink>
+                </li>
+                <NavDev LinkClickedCallback="toggleNavMenu" />
+                <NavAdmin LinkClickedCallback="toggleNavMenu" />
+            </ul>
+
+            <form class="d-flex">
+                <div class="form-check-inline form-switch">
+                    <input @onchange="toggleTheme" type="checkbox" checked="@isDark" id="dark-theme-toggler" class="form-check-input cursor-pointer" />
+                    <label for="dark-theme-toggler" class="form-check-label cursor-pointer">Dark</label>
+                </div>
+            </form>
+
+            <LoginPartial />
+        </div>
+    </div>
+</nav>
+
+@code {
+    //added
+
+    private bool collapseNavMenu = true;
+    bool isDark = false;
+    string navbarShadowCss = "navbar-black-shadow";
+    string togglerBtnCss => isDark ? "c-nav-bar-toggler-btn-white" : "c-nav-bar-toggler-btn-black";
+
+    private string navBarCollapsedCss => collapseNavMenu ? "collapse" : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isDark = await js_.InvokeAsync<bool>("setTheme");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) isDark = await js_.InvokeAsync<bool>("setTheme");
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private void toggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    async Task toggleTheme(ChangeEventArgs args)
+    {
+        var value = args.Value.ToString();
+        isDark = value == "True";
+        navbarShadowCss = isDark ? "navbar-gray-shadow" : "navbar-black-shadow";
+
+        string theme = isDark ? "dark" : "light";
+        await js_.InvokeAsync<bool>("setTheme", theme);
+        toggleNavMenu();
+    }
+}

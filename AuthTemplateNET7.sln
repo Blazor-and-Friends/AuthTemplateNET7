@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33213.308
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthTemplateNET7.Server", "AuthTemplateNET7\Server\AuthTemplateNET7.Server.csproj", "{42E943AE-64CF-462A-86F2-0AD37B1A0632}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthTemplateNET7.Client", "AuthTemplateNET7\Client\AuthTemplateNET7.Client.csproj", "{D5255A5C-3696-4383-8A6C-EDE4BD2D5988}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthTemplateNET7.Shared", "AuthTemplateNET7\Shared\AuthTemplateNET7.Shared.csproj", "{EBA32848-7620-4CBE-9B1D-87177E81FA4C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{20900B68-88F8-43B2-8559-05B96453173B}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{42E943AE-64CF-462A-86F2-0AD37B1A0632}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42E943AE-64CF-462A-86F2-0AD37B1A0632}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42E943AE-64CF-462A-86F2-0AD37B1A0632}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42E943AE-64CF-462A-86F2-0AD37B1A0632}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5255A5C-3696-4383-8A6C-EDE4BD2D5988}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5255A5C-3696-4383-8A6C-EDE4BD2D5988}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5255A5C-3696-4383-8A6C-EDE4BD2D5988}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5255A5C-3696-4383-8A6C-EDE4BD2D5988}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBA32848-7620-4CBE-9B1D-87177E81FA4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBA32848-7620-4CBE-9B1D-87177E81FA4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBA32848-7620-4CBE-9B1D-87177E81FA4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBA32848-7620-4CBE-9B1D-87177E81FA4C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9E8AC303-3EA6-4DF8-9699-922B8F2F701F}
+	EndGlobalSection
+EndGlobal
