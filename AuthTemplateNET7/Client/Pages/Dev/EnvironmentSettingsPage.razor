@@ -115,8 +115,6 @@
 
     async void getAllSettings()
     {
-        //todo gonna need to set up a specific account for the website owner for sending emails. Don't want to expose username/password to dev if the website owner is using a personal email account
-
         showingSpinner = true;
 
         pageModel = await client_.GetFromJsonAsync<EnvironmentSettingsPageModel>("api/dev/get-all-environment-variables");

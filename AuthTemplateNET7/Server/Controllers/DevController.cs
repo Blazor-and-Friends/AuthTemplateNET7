@@ -18,7 +18,7 @@ namespace AuthTemplateNET7.Server.Controllers;
 public class DevController : ControllerBase
 {
     DevRepo devRepo;
-    //todo DOCS how i just inject the datacontext rather than doing all the interface, then concrete class, then addscoped. Just more crap for DI to cycle through on each request when it's not even needed. Plus, how often do you switch out your CRUD methods? Or even EF for that matter. The only reason i have the repos is in case i want to make a phone app
+
     public DevController(DataContext dataContext)
     {
         devRepo = new(dataContext);
@@ -38,8 +38,6 @@ public class DevController : ControllerBase
         };
         return Ok(pageModel);
     }
-
-    //todo fire and forget at least for emailing: https://www.meziantou.net/fire-and-forget-a-task-in-dotnet.htm
 
     [HttpGet("get-failed-logins")]
     public async Task<IActionResult> GetFailedLogins()
@@ -164,8 +162,6 @@ public class DevController : ControllerBase
         if (model.SendSampleEmailTo != null)
         {
             string result = await sendSampleEmail(emailBatchRepo, model.SendSampleEmailTo);
-
-            //todo set the msg based on what the send result is
 
             if (msg == null) msg = result;
             else msg += " " + result;

@@ -20,13 +20,8 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 await builder.Build().RunAsync();
 
 //todo ASAP a mock emailing service or a workaround for reset password and shit
-//todo ASAP an unsubscribe link, and have an option in ContactMessage for adding to email list
 //todo signature pad: https://github.com/MarvinKlein1508/SignaturePad
-//todo inject hashing iterations from appsettings.json
-//todo ASAP app secrets https://stackoverflow.com/questions/39668456/how-to-deploy-asp-net-core-usersecrets-to-production
 //todo payment provider
-
-//todo list of at some point todos
 
 //a captcha alternative (use the honeypot or time-based) https://www.experienceux.co.uk/ux-blog/5-alternatives-to-captcha-that-wont-baffle-or-frustrate-users/#:~:text=5%20alternatives%20to%20CAPTCHA%20that%20won%E2%80%99t%20baffle%20or,4.%20Simple%20questions%20...%205%205.%20Gamification%20
 
@@ -65,6 +60,7 @@ await builder.Build().RunAsync();
 // Server.Infrastructure.UncaughtExceptionHandler
 // HTML sanitizer service
 // EditFormWrapper can confirm navigation so user does not lose unsaved changes
+// Pbkdf2_HashingService.iterations = 350_000
 
 //todo BEFORE TEMPLATE CREATION
 //change the SiteSettings.ScheduledSettings.Guid back to "change-this-string-to-something-unique"

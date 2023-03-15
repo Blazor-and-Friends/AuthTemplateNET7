@@ -30,7 +30,6 @@ public class ScheduledController : ControllerBase
 #pragma warning restore CS0649
     DateTime utcNow = DateTime.UtcNow;
 
-    //todo a settings table with a setting for turning on/off all aspects of this controller (i.e. the whole thing off, deleting old logitems, old logins. Use that fancy json field in ef 7
     //todo DOCS a settings table in the db with a setting for turning on/off all aspects of this controller (i.e. the whole thing off, deleting old logitems, old logins. Use that fancy json field in ef 7. This needs to be in a settings table so that the dev can turn off any aspect of the application that is throwing an exception even when s/he's not in front of his/her dev box
     public ScheduledController(EmailBatchRepo emailBatchRepo, IConfiguration configuration, DataContext dataContext)
     {
@@ -48,11 +47,19 @@ public class ScheduledController : ControllerBase
         if (guid == null || guid != expectedGuid) return BadRequest("Guid must match");
 
         //todo DOCS change the ScheduledController.Hourly guid and delete this line
-        if (guid == "change-this-string-to-something-unique") return BadRequest("Guid not changed");
+        if (guid == "change-this-string-to-something-unique") return BadRequest("Guid not changed in appsettings.json");
 
         var settings = await dataContext.SiteSettings
             .Where(m => m.Key == AdminSettings.Key || m.Key == DevSettings.Key)
             .ToArrayAsync();
+
+        var settingDev = settings
+            .Where(m => m.Key == DevSettings.Key).FirstOrDefault();
+
+        if (settingDev == null) devSettings = new();
+        else devSettings = settingDev.Value.FromJson<DevSettings>();
+
+        if (!devSettings.MaintenanceActivityOn) return Ok();
 
         var settingAdmin = settings
             .Where(m => m.Key == AdminSettings.Key)
@@ -61,21 +68,18 @@ public class ScheduledController : ControllerBase
         if (settingAdmin == null) adminSettings = new();
         else adminSettings = settingAdmin.Value.FromJson<AdminSettings>();
 
-        var settingDev = settings
-            .Where(m => m.Key == DevSettings.Key).FirstOrDefault();
+        if(devSettings.DeleteOldContactMessages) await deleteOldContactMessages(); //once a week Sundays at 3 am utc
 
-        if(settingDev == null) devSettings = new();
-        else devSettings = settingDev.Value.FromJson<DevSettings>();
+        if(devSettings.DeleteOldLogIns) await deleteOldLogins(); //delete any successful once a week at 4 am utc on Sundays
 
-        await deleteOldContactMessages(); //once a week Sundays at 3 am utc
-        await deleteOldLogins(); //delete any successful once a week at 4 am utc on Sundays
-        await deleteOldLogItems(); //once a week on Sundays at 5 am utc
-        await deleteOldEmailBatches(); //once a week on Mondays at 4 am utc
+        if(devSettings.DeleteOldLogItems) await deleteOldLogItems(); //once a week on Sundays at 5 am utc
+
+        if(devSettings.DeleteOldEmailBatches) await deleteOldBatches(); //once a week on Mondays at 4 am utc
 
 
         if (devSettings.LogMaintenanceActivity && saveChanges) await dataContext.TrySaveAsync("Exception thrown from Server.Controllers.ScheduledController.Hourly()");
 
-        await emailBatchRepo.ProcessBatches();
+        Task.Run(emailBatchRepo.ProcessBatchesAsync).Forget();
 
         return Ok();
     }
@@ -102,7 +106,7 @@ public class ScheduledController : ControllerBase
         }
     }
 
-    async Task deleteOldEmailBatches()
+    async Task deleteOldBatches()
     {
         if(utcNow.DayOfWeek == DayOfWeek.Monday && utcNow.Hour == 4)
         {

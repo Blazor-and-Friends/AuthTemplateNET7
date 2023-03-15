@@ -11,7 +11,7 @@ public class Email
     public int Id { get; set; }
 
     public int EmailBatchId { get; set; }
-    public EmailBatch EmailBatch { get; set; }
+    public Batch EmailBatch { get; set; }
 
     public Guid? RecipientId { get; set; }
 
@@ -23,7 +23,6 @@ public class Email
     [Column(TypeName = "smalldatetime")]
     public DateTime? DateSent { get; set; }
 
-    //todo when automating sending batches, make sure to skip any that have an error result
     [Required, MaxLength(128)]
     public EmailSendResult EmailSendResult { get; set; }
 

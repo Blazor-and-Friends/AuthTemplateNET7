@@ -16,6 +16,11 @@ public class EmailBatchRepo
     private readonly IEmailService emailService;
     private readonly LinkHelpers linkHelpers;
 
+    /// <summary>
+    /// To avoid Admin trying to update a batch currently being processed
+    /// </summary>
+    public static int CurrentBatchId { get; private set; }
+
     public EmailBatchRepo(DataContext dataContext, IEmailService emailService, LinkHelpers linkHelpers)
     {
         this.dataContext = dataContext;
@@ -23,8 +28,10 @@ public class EmailBatchRepo
         this.linkHelpers = linkHelpers;
     }
 
-    public async Task ProcessBatches()
+    public async Task ProcessBatchesAsync()
     {
+        //todo at some point processing batches needs unit testing
+
         var setting = await dataContext.SiteSettings.Where(m => m.Key == EmailSettings.Key).FirstOrDefaultAsync();
 
         if (setting == null)
@@ -43,7 +50,7 @@ public class EmailBatchRepo
 
         if (availableToSendCount < 1) return;
 
-        var unfinishedBatches = await dataContext.EmailBatches
+        var unfinishedBatches = await dataContext.Batches
             .Where(m => m.BatchStatus == BatchStatus.InProgress)
             .OrderByDescending(m => m.Priority)
             .Include(m => m.Emails.Where(n => n.EmailSendResult == EmailSendResult.Pending)).ToArrayAsync();
@@ -53,20 +60,62 @@ public class EmailBatchRepo
         int sentCount = 0;
         foreach (var b in unfinishedBatches)
         {
-            sentCount++;
-            if(sentCount >= availableToSendCount)
+            EmailBatchRepo.CurrentBatchId = b.Id;
+
+            foreach (var email in b.Emails)
             {
+                if (sentCount >= availableToSendCount) break;
 
+                Exception exception = null;
+                if (b.AppendUnsubscribeLink && email.RecipientId != null)
+                {
+                    string unsubscribeLink = linkHelpers.GetUnsubscribeLinkHtml(email.RecipientId.Value);
 
+#pragma warning disable CS0618
+                    exception = await emailService.SendAsync(b.Body + unsubscribeLink, b.Subject, email.ToAddress);
+#pragma warning restore CS0618
+                }
+                else
+                {
+#pragma warning disable CS0618
+                    exception = await emailService.SendAsync(b.Body, b.Subject, email.ToAddress);
+#pragma warning restore CS0618
+                }
 
-                dataContext.Update(b);
-                break;
+                if(exception == null)
+                {
+                    email.EmailSendResult = EmailSendResult.Success;
+                    email.DateSent = DateTime.UtcNow;
+
+                    b.SentEmailsCount++;
+                }
+                else
+                {
+                    LogItem logItem = new(exception, $"Could not send email to {email.ToAddress} with subject {b.Subject}. Batch.Id: {b.Id} Email.Id: {email.Id}");
+                    dataContext.Add(logItem);
+
+                    email.EmailSendResult = EmailSendResult.Error;
+
+                    b.ErrorsCount++;
+                }
+
+                dataContext.Update(email);
+
+                sentCount++;
             }
 
-            var emails = b.Emails;
+            if(b.ErrorsCount + b.SentEmailsCount >= b.TotalEmailsCount)
+            {
+                b.DateCompleted = DateTime.UtcNow;
+                b.BatchStatus = BatchStatus.Complete;
+            }
+
+            dataContext.Update(b);
+
+            if (sentCount >= availableToSendCount) break;
         }
 
-        //todo send out emails
+        await dataContext.TrySaveAsync($"Could not save a ProcessBatches() run");
     }
 
     public async Task<bool> SendSingleEmailAsync(string body, string subject, string toAddress, bool appendUnsubscribeLink, Priority priority = Priority.High, string toName = null, Guid? recipientId = null, int deleteAfterDays = 365)
@@ -78,7 +127,7 @@ public class EmailBatchRepo
             throw new ArgumentNullException("YOU NEED A recipientId IN ORDER TO APPEND AN UNSUBSCRIBE LINK");
         }
 
-        EmailBatch batch = createBatchWithOneRecipient(appendUnsubscribeLink, body, deleteAfterDays, priority, recipientId, subject, toAddress, toName);
+        Batch batch = createBatchWithOneRecipient(appendUnsubscribeLink, body, deleteAfterDays, priority, recipientId, subject, toAddress, toName);
 
 #pragma warning disable CS0618
         var exception = await emailService.SendAsync(batch.Body, subject, toAddress);
@@ -118,10 +167,10 @@ public class EmailBatchRepo
         return exception == null;
     }
 
-    EmailBatch createBatchWithOneRecipient(bool appendUnsubscribeLink, string body, int deleteAfterDays, Priority priority, Guid? recipientId, string subject, string toAddress, string toName)
+    Batch createBatchWithOneRecipient(bool appendUnsubscribeLink, string body, int deleteAfterDays, Priority priority, Guid? recipientId, string subject, string toAddress, string toName)
     {
 
-        EmailBatch result = new() {
+        Batch result = new() {
             DeleteAfter = DateTime.UtcNow.AddDays(deleteAfterDays),
             Priority = priority,
             Subject = subject,
@@ -133,7 +182,7 @@ public class EmailBatchRepo
             var unsubscribeLink = linkHelpers.GetUnsubscribeLinkHtml(recipientId.Value);
 
             //wrap in a div to ensure unsubscribe link is on its own line
-            result.Body = $"{body}{linkHelpers}";
+            result.Body = $"{body}{unsubscribeLink}";
         }
         else
         {

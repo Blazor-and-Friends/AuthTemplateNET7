@@ -7,12 +7,9 @@ namespace AuthTemplateNET7.Server.Data;
 //added
 public class DataContext : DbContext
 {
-    //todo DateOnly and TimeOnly support for EF Core
-
     public DataContext(DbContextOptions<DataContext> opts) : base(opts) { }
 
     #region template provided entities
-
 
     #region Auth
 
@@ -22,16 +19,15 @@ public class DataContext : DbContext
 
     #endregion //auth
 
-    //todo ASAP html sanitizer
+    public DbSet<Batch> Batches { get; set; }
+
     public DbSet<ContactMessage> ContactMessages { get; set; }
 
-    public DbSet<EmailBatch> EmailBatches { get; set; }
+    public DbSet<Email> Emails { get; set; }
 
     public DbSet<LogItem> LogItems { get; set; }
 
     public DbSet<Recipient> Recipients { get; set; }
-
-    public DbSet<Email> Emails { get; set; }
 
     public DbSet<SiteSetting> SiteSettings { get; set; }
 

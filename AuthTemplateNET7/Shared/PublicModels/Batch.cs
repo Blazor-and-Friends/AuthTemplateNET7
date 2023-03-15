@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace AuthTemplateNET7.Shared.PublicModels;
-public class EmailBatch
+public class Batch
 {
     public int Id { get; set; }
 
@@ -27,7 +27,7 @@ public class EmailBatch
     [Column(TypeName = "smalldatetime")]
     public DateTime DeleteAfter { get; set; } = DateTime.UtcNow.AddYears(1);
 
-    public bool DevOnly { get; set; }
+    public bool DevOnly { get; set; } //so that the dev's email address isn't exposed to the site owner
 
     public List<Email> Emails { get; set; }
 
@@ -77,15 +77,15 @@ public class EmailBatch
 
     #region ctors
 
-    public EmailBatch() { }
+    public Batch() { }
 
-    public EmailBatch(string body, int deleteAfterDays, bool devOnly, Email sentEmail, string subject, Priority priority = Priority.High)
+    public Batch(string body, int deleteAfterDays, bool devOnly, Email sentEmail, string subject, Priority priority = Priority.High)
     {
         Subject = subject;
         Body = body.StartsWith("<") ? body : $"<div>{body}<div>";
         Emails = new(1) { sentEmail };
         DevOnly = devOnly;
-        DeleteAfter = DateTime.UtcNow.AddDays(deleteAfterDays); //todo ScheduledController delete old email batches
+        DeleteAfter = DateTime.UtcNow.AddDays(deleteAfterDays);
         Priority = priority;
     }
 

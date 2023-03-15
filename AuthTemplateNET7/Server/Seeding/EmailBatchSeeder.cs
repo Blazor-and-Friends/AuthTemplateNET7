@@ -22,7 +22,7 @@ public class EmailBatchSeeder
     {
         int howMany = random.Next(min, max);
 
-        List<EmailBatch> result = new(howMany);
+        List<Batch> result = new(howMany);
         DateTime utcNow = DateTime.UtcNow;
 
         for (int i = 0; i < howMany; i++)
@@ -45,7 +45,7 @@ public class EmailBatchSeeder
 
             Priority priority = (Priority)random.Next(3);
 
-            EmailBatch batch = new EmailBatch
+            Batch batch = new Batch
             {
                 BatchStatus = batchStatus,
                 Body = getBody(),

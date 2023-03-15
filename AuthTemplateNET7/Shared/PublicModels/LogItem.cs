@@ -83,7 +83,6 @@ public class LogItem
         BootstrapColor = bootstrapColor;
     }
 
-    //todo add an email to be sent to the dev anytime an exception is thrown in dataContext and the global exception handler
     public LogItem(Exception e, string message = null) : this(message, 180, BootstrapColor.Danger)
     {
         while (e.InnerException != null) e = e.InnerException;

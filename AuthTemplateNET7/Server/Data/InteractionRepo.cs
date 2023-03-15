@@ -67,7 +67,7 @@ public class InteractionRepo
                 Email sentEmail = new(adminSettings.SendNotificationsTo);
 
                 string body = $"<p><b>{contactMessage.Subject}</b></p><p>{contactMessage.Message}</p><p>View all {linkHelpers.GetContactMessagesPageLink()}.</p>";
-                EmailBatch emailBatch = new(
+                Batch emailBatch = new(
                     body,
                     deleteAfterDays: 7,
                     devOnly: false,

@@ -75,18 +75,13 @@ public class AdminController : ControllerBase
     }
 
     [HttpPost("pause-or-resume-batch")]
-    public async Task<IActionResult> PauseOrResumeBatch([FromBody]EmailBatch model)
+    public async Task<IActionResult> PauseOrResumeBatch([FromBody]Batch model)
     {
-        var success = await adminRepo.PauseOrResumeBatchAsync(model);
+        (bool success, string message) = await adminRepo.PauseOrResumeBatchAsync(model);
 
         if (success) return Ok();
 
-        if(model.BatchStatus == BatchStatus.Complete)
-        {
-            return BadRequest("You cannot pause or resume a batch that has been completed.");
-        }
-
-        return BadRequest($"There was a problem updating the batch with subject {model.Subject}. The issue has been logged. Contact your webmaster regarding this issue.");
+        return StatusCode(500, message);
     }
 
     #endregion //email batches

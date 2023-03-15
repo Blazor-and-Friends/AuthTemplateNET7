@@ -85,7 +85,7 @@ public class AdminRepo
     public Task<int> DeleteEmailBatchesByIds(int[] ids)
     {
 #if DEBUG
-        var all = dataContext.EmailBatches.ToArray();
+        var all = dataContext.Batches.ToArray();
 
         var idsDict = ids.ToDictionary(k => k, v => false);
 
@@ -104,9 +104,9 @@ public class AdminRepo
 #endif
     }
 
-    public Task<EmailBatch[]> GetEmailBatchesAsync()
+    public Task<Batch[]> GetEmailBatchesAsync()
     {
-        return dataContext.EmailBatches
+        return dataContext.Batches
             .Where(m => !m.DevOnly)
             .OrderByDescending(m => m.DateCreated)
             .AsNoTracking()
@@ -122,9 +122,12 @@ public class AdminRepo
             .ToArrayAsync();
     }
 
-    public async Task<bool> PauseOrResumeBatchAsync(EmailBatch batch)
+    public async Task<(bool success, string message)> PauseOrResumeBatchAsync(Batch batch)
     {
-        //todo at some point we're gonna need to manage handling a batch that is currently having emails sent out since when a portion of emails are sent and the batch is resaved to the db, it will overwrite the "paused" status. A quick and dirty way to do this would be to put a static Property on EmailBatchRepo for the batch currently in progress and check that the two aren't the same
+        if(EmailBatchRepo.CurrentBatchId == batch.Id)
+        {
+            return (false, $"There are currently emails being sent out on batch with subject {batch.Subject}. You cannot pause a batch under operation. Try again in a couple seconds or alternatively delete the batch");
+        }
 
         bool needsUpdating = false;
         if (batch.BatchStatus == BatchStatus.InProgress)
@@ -142,10 +145,13 @@ public class AdminRepo
         {
             dataContext.Update(batch);
             var rows = await dataContext.TrySaveAsync($"Could not change BatchStatus on {batch.Subject} with Id {batch.Id}");
-            if (rows > 0) return true;
+
+            if (rows > 0) return (true, null);
+
+            else return (false, $"There was a problem updating the batch with subject {batch.Subject}. The issue has been logged. Contact your webmaster regarding this issue.");
         }
 
-        return false;
+        return (false, "You cannot pause or resume a batch that has been completed.");
     }
 
     #endregion //email batches

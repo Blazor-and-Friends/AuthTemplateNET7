@@ -82,9 +82,13 @@ public class AuthRepo
         RegisterMemberResultDto result = await memberExists(model);
         if (result != null) return (result, null);
 
+        HtmlSanitizerService sanitizerService = new();
+        sanitizerService.SanitizeRegisterDto(model);
+
         (string hashedPassword, string hashedSalt) = passwordHasher.Hash(model.Password);
 
         var customerRole = await dataContext.Roles.Where(m => m.Name == CUSTOMER_ROLE_NAME).FirstOrDefaultAsync();
+
 
         Member member = new()
         {

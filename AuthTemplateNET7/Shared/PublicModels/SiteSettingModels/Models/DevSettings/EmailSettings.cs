@@ -8,7 +8,7 @@ namespace AuthTemplateNET7.Shared.PublicModels.SiteSettingModels.Models.DevSetti
 
 //added
 
-//todo this should be run through unit tests
+//todo EmailSettings should be run through unit tests
 public class EmailSettings
 {
     #region editable props

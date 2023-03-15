@@ -30,7 +30,7 @@ public class UncaughtExceptionHandler
 
                 string body = $"<p><b>Exception message:</b>&nbsp;{logItem.ErrorMessage}. <b>Stacktrace:</b></p><pre>{logItem.StackTrace}</pre><p>Check your {linkHelpers.GetLogItemsPageLink()}.</p>"; //log item has innerexception message
 
-                EmailBatch emailBatch = new(
+                Batch emailBatch = new(
                     body,
                     deleteAfterDays: 7,
                     devOnly: true,

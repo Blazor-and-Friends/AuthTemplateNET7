@@ -199,15 +199,15 @@
 
     [CascadingParameter] public NotificationService notificationService { get; set; }
 
-    List<EmailBatch> batches;
+    List<Batch> batches;
     ConfirmDialog confirmDialog;
     Spinner spinner;
 
-    EmailBatch createCopyWithoutEmails(EmailBatch model)
+    Batch createCopyWithoutEmails(Batch model)
     {
         //todo hack for some reason it's complaining about SentEmail.EmailSendResult not being a string... something something. Make a copy of the batch without the emails.
 
-        return new EmailBatch
+        return new Batch
         {
             Id = model.Id,
             BatchStatus = model.BatchStatus,
@@ -269,7 +269,7 @@
         else notificationService.NotifyError(contentStr);
     }
 
-    async Task getSentEmails(EmailBatch batch)
+    async Task getSentEmails(Batch batch)
     {
         if (batch.ShowingEmails)
         {
@@ -301,19 +301,19 @@
         while (spinner == null) await Task.Delay(10);
 
         spinner.ShowSpinner(maskViewport: false);
-        batches = await client_.GetFromJsonAsync<List<EmailBatch>>("api/admin/get-email-batches");
+        batches = await client_.GetFromJsonAsync<List<Batch>>("api/admin/get-email-batches");
 
         spinner.HideSpinner();
     }
 
-    async Task pauseResumeBatch(EmailBatch batch)
+    async Task pauseResumeBatch(Batch batch)
     {
         spinner.ShowSpinner($"Updating batch with subject \"{batch.Subject}\"", false);
 
         //todo hack for some reason it's complaining about SentEmail.EmailSendResult not being a string... something something. Make a copy of the batch without the emails.
         var copy = createCopyWithoutEmails(batch);
 
-        var response = await client_.PostAsJsonAsync<EmailBatch>("api/admin/pause-or-resume-batch", copy);
+        var response = await client_.PostAsJsonAsync<Batch>("api/admin/pause-or-resume-batch", copy);
 
         if (response.IsSuccessStatusCode)
         {

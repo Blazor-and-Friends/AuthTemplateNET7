@@ -19,17 +19,8 @@ public class AuthStateController : ControllerBase
     {
         AuthedMemberDto result = new();
 
-        //todo Do i want to check the db everytime? What about a fired employee? How do i handle signing him out so that he can't mess with the data?
         if (User.Identity.IsAuthenticated)
         {
-            //result = await dataContext.Members.Where(m => m.DisplayName == User.Identity.Name)
-            //.Select(m => new AuthedMemberDto
-            //{
-            //    DisplayName = m.DisplayName,
-            //    Email = m.Email,
-            //})
-            //.FirstOrDefaultAsync();
-
             result.DisplayName = User.FindFirstValue(ClaimTypes.Name);
             result.Email = User.FindFirstValue(ClaimTypes.Email);
             result.Roles = User.FindAll(ClaimTypes.Role).Select(m => m.Value).ToArray();

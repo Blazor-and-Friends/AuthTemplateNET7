@@ -14,7 +14,6 @@ public class DevRepo
 {
     DataContext dataContext;
 
-    //todo DOCS explain my repos and how EF implements the repository pattern and these are really just methods grouped together. I use "repo" as an indicator these touch the database
     public DevRepo(DataContext dataContext)
     {
         this.dataContext = dataContext;

@@ -13,8 +13,6 @@ namespace AuthTemplateNET7.Shared.PublicModels;
 //added
 public class ContactMessage
 {
-    //todo sanitize any user added fields here
-
     [FormFactoryIgnore]
     public int Id { get; set; }
 
@@ -25,14 +23,10 @@ public class ContactMessage
     [MaxLength(128, ErrorMessage = "Must be 128 characters or less")]
     public string Subject { get; set; }
 
-    [Required,
-        MaxLength(2048, ErrorMessage = "Must be 2048 characters or less"),
-        DataType(DataType.MultilineText)]
+    [Required, MaxLength(2048, ErrorMessage = "Must be 2048 characters or less"), DataType(DataType.MultilineText)]
     public string Message { get; set; }
 
-    [MaxLength(128, ErrorMessage = "Must be 128 characters or less"),
-        EmailAddress(ErrorMessage = "This does not appear to be a valid email address"),
-        Display(Description = "If you would like an email response, please provide your email address")]
+    [MaxLength(128, ErrorMessage = "Must be 128 characters or less"), EmailAddress(ErrorMessage = "This does not appear to be a valid email address"), Display(Description = "If you would like an email response, please provide your email address")]
     public string EmailAddress { get; set; }
 
     [DisplayName("Yes, add me to your email list")]
@@ -45,9 +39,8 @@ public class ContactMessage
     public string LastName { get; set; }
 
     string phone_;
-    [MaxLength(20, ErrorMessage = "Phone can be no longer than 20 characters"), //international numbers, extensions, see https://stackoverflow.com/a/68457894/2816057
-        Phone(ErrorMessage = "This does not appear to be a phone number"),
-        Display(Description = "If you would like a call or text, please provide your phone number")]
+    //MaxLength international numbers, extensions, see https://stackoverflow.com/a/68457894/2816057
+    [MaxLength(20, ErrorMessage = "Phone can be no longer than 20 characters"), Phone(ErrorMessage = "This does not appear to be a phone number"), Display(Description = "If you would like a call or text, please provide your phone number")]
     public string Phone
     {
         get

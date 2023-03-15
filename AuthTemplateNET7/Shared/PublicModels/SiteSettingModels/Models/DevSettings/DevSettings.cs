@@ -9,7 +9,14 @@ using System.Threading.Tasks;
 namespace AuthTemplateNET7.Shared.PublicModels.SiteSettingModels.Models.DevSettings;
 public class DevSettings
 {
+    public bool DeleteOldContactMessages { get; set; } = true;
+    public bool DeleteOldLogIns { get; set; } = true;
+    public bool DeleteOldLogItems { get; set; } = true;
+    public bool DeleteOldEmailBatches { get; set; } = true;
+
     public bool LogMaintenanceActivity { get; set; } = true;
+
+    public bool MaintenanceActivityOn { get; set; } = true;
 
     public bool NotifyWhenUncaughtExceptionThrown { get; set; } = true;
 

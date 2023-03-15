@@ -16,7 +16,7 @@ public class MembersSeeder
     public List<Member> SeedMembersAndRoles()
     {
         string password = "helloDollyHowYeBe1!"; // same password for all for the login page
-        string yourRealEmail = "franki@valli.com"; //todo for testing require email confirmation
+        string yourRealEmail = "franki@valli.com";
 
         string[] displayNames = { "Franki Dev", "Barbara Admin", "Alice Customer" };
         string[] emails = { yourRealEmail, "barbara@eden.com", "alice@eve.com" };

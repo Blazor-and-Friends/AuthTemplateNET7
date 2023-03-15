@@ -94,7 +94,7 @@ public class GenericField<TModel>
     {
         get
         {
-            DisplayAttribute displayAttribute = propertyInfo_.GetCustomAttribute<DisplayAttribute>(); //todo refactor as this is called twice here and description
+            DisplayAttribute displayAttribute = propertyInfo_.GetCustomAttribute<DisplayAttribute>();
             if (displayAttribute != null)
             {
                 var description = displayAttribute.GetDescription();
@@ -635,8 +635,6 @@ public class GenericField<TModel>
 
     void setPrompt()
     {
-        //todo at some point deal with select elements, opt out checkbox/radio inputs
-
         if(propertyType_ == typeof(bool)) return; //this is gonna jam on a bool that is displayed as two radio buttons
 
         if(displayAttribute_ != null)
