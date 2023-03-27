@@ -1,0 +1,129 @@
+﻿@page "/shopping-cart"
+@using AuthTemplateNET7.Client.ClientServices
+@using AuthTemplateNET7.Client.Components
+@using AuthTemplateNET7.Shared.PublicModels
+@using AuthTemplateNET7.Shared.Dtos.Payments
+@implements IDisposable
+@inject HttpClient client_
+@inject IJSRuntime js_
+@inject NavigationManager nav_
+@inject StateManagementService sms_
+
+<Spinner @ref="spinner" MaskViewport="true" ShowWhenInitizialed="false" />
+
+<PageTitleAndHeader Title="Shopping Cart" />
+<div class="container">
+    <div class="d-flex flex-wrap-reverse gap-3">
+
+        <!--order items-->
+        <div class="flex-grow-1">
+            @if (sms_.ItemsCount > 0)
+            {
+                <div class="d-flex justify-content-center">
+                    <table cellpadding="6">
+                        <thead>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in sms_.Order.OrderItems)
+                            {
+                                <tr>
+                                    <td>
+                                        <img src="@item.ImgUrl" class="img-fluid rounded" width="50" />
+                                    </td>
+                                    <td>
+                                        @item.Description
+                                    </td>
+                                    <td>
+                                        @item.UnitPrice.ToString("C")
+                                    </td>
+                                    <td>
+                                        <input type="number" value="@item.Quantity" class="c-width-4ch" select-all />
+                                    </td>
+                                    <td>
+                                        <button @onclick="() => sms_.RemoveFromCartAsync(item)" class="btn btn-link">
+                                            Remove
+                                        </button>
+                                    </td>
+                                    <td>
+                                        @item.LineTotal.ToString("C")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <h2 class="text-center">No items in your cart</h2>
+            }
+        </div>
+        <div class="min-width-max-content">
+            @if (sms_.ItemsCount > 0)
+            {
+                <div>
+                    <span class="me-2">Subtotal (@sms_.ItemsCount items):</span>
+                    <span class="fw-bold">@sms_.Order.Total.ToString("C")</span>
+                </div>
+                <div class="mt-3 d-flex justify-content-end">
+                    <button @onclick="checkout" class="btn btn-primary">Checkout</button>
+                </div>
+
+                {
+                    #if DEBUG
+                }
+                <input value="4242 4242 4242 4242" select-all />
+                {
+                    #endif
+                }
+            }
+        </div>
+    </div>
+
+</div>
+
+@code {
+    [CascadingParameter]public NotificationService notificationService { get; set; }
+    const string SHOPPING_CART_KEY = "SHOPPING_CART";
+    Spinner spinner;
+
+    async Task checkout()
+    {
+        spinner.ShowSpinner("Hold on while we redirect you to checkout page...");
+
+        var response = await client_.PostAsJsonAsync<Order>("api/payments/create-checkout-session", sms_.Order);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var contentStr = await response.Content.ReadAsStringAsync();
+
+            StripeCheckoutSessionWrapper wrapper = contentStr.FromJson<StripeCheckoutSessionWrapper>();
+
+            await sms_.SaveCartToLocalStorageAsync(wrapper.Order);
+
+            nav_.NavigateTo(wrapper.SessionUrl);
+        }
+        else
+        {
+            await notificationService.NotifyNonSuccessResponseAsync(response);
+        }
+
+        spinner.HideSpinner();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        sms_.CartChanged += StateHasChanged;
+        await sms_.Init();
+    }
+
+    void quantityChanged(OrderItem orderItem)
+    {
+
+    }
+
+    public void Dispose()
+    {
+        sms_.CartChanged -= StateHasChanged;
+    }
+}

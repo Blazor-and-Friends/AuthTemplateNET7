@@ -1,7 +1,4 @@
-﻿#if DEBUG
-using AuthTemplateNET7.Shared.Dtos.Membership;
-
-namespace AuthTemplateNET7.Server.Seeding;
+﻿namespace AuthTemplateNET7.Server.Seeding;
 
 //added
 public class MembersSeeder
@@ -13,13 +10,22 @@ public class MembersSeeder
         this.dataContext = dataContext;
     }
 
-    public List<Member> SeedMembersAndRoles()
+    public List<Member> SeedMembersAndRoles(bool useMyRealEmailAddress)
     {
         string password = "helloDollyHowYeBe1!"; // same password for all for the login page
-        string yourRealEmail = "franki@valli.com";
 
+        string myRealEmail = null;
+
+        if(useMyRealEmailAddress)
+        {
+            myRealEmail = Environment.GetEnvironmentVariable("MY_REAL_EMAIL_ADDRESS", EnvironmentVariableTarget.User);
+        }
+
+        string devEmailAddress = myRealEmail != null ? myRealEmail : "franki@valli.com"; //for testing you email service
+
+        string[] guidStrs = { "e8b24c30-94f4-4c53-b3bc-835214e87111", "1d1ad76e-5c93-4c9f-ad80-6747fb962c2f", "e84707e0-d850-4d2b-aa59-4354d38a169f" };
         string[] displayNames = { "Franki Dev", "Barbara Admin", "Alice Customer" };
-        string[] emails = { yourRealEmail, "barbara@eden.com", "alice@eve.com" };
+        string[] emails = { devEmailAddress, "barbara@eden.com", "alice@eve.com" };
 
         Pbkdf2_HashingService hashingService= new Pbkdf2_HashingService();
 
@@ -49,6 +55,7 @@ public class MembersSeeder
             (string hashedPassword, string salt) = hashingService.Hash(password);
             Member member = new Member
             {
+                Id = Guid.Parse(guidStrs[i]),
                 DisplayName = displayNames[i],
                 Email = emails[i],
                 PasswordHash = hashedPassword,
@@ -66,4 +73,3 @@ public class MembersSeeder
         return result;
     }
 }
-#endif

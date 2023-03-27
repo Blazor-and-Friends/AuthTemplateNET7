@@ -16,6 +16,8 @@ public class DevSettings
 
     public bool LogMaintenanceActivity { get; set; } = true;
 
+    public bool LogAllStripeWebhookActivity { get; set; } = true;
+
     public bool MaintenanceActivityOn { get; set; } = true;
 
     public bool NotifyWhenUncaughtExceptionThrown { get; set; } = true;

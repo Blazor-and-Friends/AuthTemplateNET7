@@ -4,29 +4,8 @@
 
 <PageTitleAndHeader Title="Welcome" MetaDescription="Enter your <meta name='description' /> content here..." />
 
-@{
-    #if DEBUG
-}
-
-@*<TemplateDocs />*@
-
-@{
-    #endif
-}
 @code {
-
-    #if DEBUG
-    [CascadingParameter] public NotificationService notificationService { get; set; }
-
-    bool called;
-    protected override void OnParametersSet()
-    {
-    // OnParametersSet sometimes gets called twice: https://stackoverflow.com/a/65582818/2816057
-    if(called) return;
-    called = true;
-    notificationService.Notify("<h4 class='alert-heading'>Welcome!</h4><div>Check out my <a href='https://bing.com' class='alert-link'>video playlist TODO: make the playlist</a> for the features of this template</div>", removeAfterSeconds: 1);
-    }
-#endif
+    //added
 }
 
 

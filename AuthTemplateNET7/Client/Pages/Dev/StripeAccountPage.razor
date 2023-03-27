@@ -1,0 +1,115 @@
+﻿@page "/dev/stripe-account"
+@using AuthTemplateNET7.Shared
+@attribute [Authorize(Roles = "Dev")]
+@inject HttpClient client_
+@inject NavigationManager nav_
+
+<ConfirmDialog @ref="confirmDialog" />
+<Spinner @ref="spinner" />
+<VerifyPasswordDialog @ref="verifyPasswordDialog" />
+
+<PageTitleAndHeader Title="Stripe Keys" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftDev />
+    </LeftPane>
+    <MainContent>
+        @if(accountStatusDto != null)
+        {
+            <div class="d-flex justify-content-center">
+                <table cellpadding="6">
+                    <tr>
+                        <th>Mode</th>
+                        <td>@accountStatusDto.TestModeStatus</td>
+                    </tr>
+                    <tr>
+                        <th>Live keys</th>
+                        <td>@accountStatusDto.LiveKeysStatus</td>
+                    </tr>
+                    <tr>
+                        <th>Test keys</th>
+                        <td>@accountStatusDto.TestKeysStatus</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <button @onclick="getAccount" class="btn btn-primary">Create/view/edit keys</button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        }
+
+        @if (model != null)
+        {
+            <p><span class="fw-bold">Note:</span> You can enter either your test keys or your live keys or both.</p>
+            <EditFormWrapper Model="model" OnValidSubmit="validSubmit">
+                <FormFactory Model="model" />
+            </EditFormWrapper>
+        }
+    </MainContent>
+</SplitContainer>
+
+@code {
+    //added
+
+    StripeAccountStatusDto accountStatusDto;
+    ConfirmDialog confirmDialog;
+    StripeAccountDto model;
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+    Spinner spinner;
+    VerifyPasswordDialog verifyPasswordDialog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        accountStatusDto = await client_.GetFromJsonAsync<StripeAccountStatusDto>("api/dev/check-stripe-account-status");
+
+        spinner.HideSpinner();
+    }
+
+    async Task getAccount()
+    {
+        var success = await verifyPasswordDialog.PasswordVerifiedAsync();
+
+        if (success)
+        {
+            spinner.ShowSpinner("Fetching Stripe keys...");
+            model = await client_.GetFromJsonAsync<StripeAccountDto>("api/dev/get-stripe-account");
+            accountStatusDto = null;
+            spinner.HideSpinner();
+        }
+        else
+        {
+            notificationService.Notify("Canceled or incorrect password", alertLevel: BootstrapColor.Warning);
+        }
+    }
+
+    async void validSubmit()
+    {
+        bool yes = true;
+
+        if (model.DeleteAccount)
+        {
+            yes = await confirmDialog.ConfirmAsync("Are you sure you want to delete your Stripe account?", "Confirm Delete");
+            if (!yes) return;
+        }
+
+        if (!model.TestMode)
+        {
+            yes = await confirmDialog.ConfirmAsync("Are you sure you want to go live?");
+            if (!yes) return;
+        }
+
+        var response = await client_.PostAsJsonAsync<StripeAccountDto>("api/dev/set-stripe-account", model);
+
+        if (response.IsSuccessStatusCode)
+        {
+            notificationService.Notify("Stripe account saved");
+            nav_.NavigateTo("dev/dashboard");
+        }
+        else
+        {
+            await notificationService.NotifyNonSuccessResponseAsync(response);
+        }
+    }
+}

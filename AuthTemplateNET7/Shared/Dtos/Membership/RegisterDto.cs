@@ -12,7 +12,7 @@ public class RegisterDto : IValidatableObject
         EmailAddress(ErrorMessage = "This does not appear to be a vaild email address")]
     public string EmailAddress { get; set; }
 
-    [FormFactoryIgnore] //todo DOCS FormFactoryIgnore attribute for the FormFactory to skip a property
+    [FormFactoryIgnore]
     [Required(ErrorMessage = "Please fill out the password field"), StringLength(128, MinimumLength = 16), DataType(DataType.Password)]
     public string Password { get; set; }
 

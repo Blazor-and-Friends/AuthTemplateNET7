@@ -18,10 +18,21 @@ public class Member
     [Required, MaxLength(128), EmailAddress]
     public string Email { get; set; }
 
+    public DateTime? ForgotPasswordExpiration { get; set; }
+
+    public Guid? ForgotPasswordToken { get; set; }
+
     public List<Login> Logins { get; set; }
+
+    public List<Order> Orders { get; set; }
 
     [Required, MaxLength(128)]
     public string PasswordHash { get; set; }
+
+    /// <summary>
+    /// So that sensitive data (like API keys) can't be accessed without password being verified
+    /// </summary>
+    public DateTime? PasswordVerifitedExpiration { get; set; }
 
     public List<Role> Roles { get; set; }
 

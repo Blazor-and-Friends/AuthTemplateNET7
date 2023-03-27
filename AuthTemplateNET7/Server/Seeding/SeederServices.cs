@@ -1,5 +1,4 @@
-﻿#if DEBUG
-namespace AuthTemplateNET7.Server.Seeding;
+﻿namespace AuthTemplateNET7.Server.Seeding;
 
 //added
 
@@ -295,5 +294,3 @@ public class Sentence
 {
     public string Lorem { get; set; }
 }
-
-#endif

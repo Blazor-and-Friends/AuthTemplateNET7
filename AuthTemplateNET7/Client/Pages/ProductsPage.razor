@@ -1,0 +1,56 @@
+﻿@page "/products"
+@using AuthTemplateNET7.Client.ClientServices
+@using AuthTemplateNET7.Client.Components;
+@using AuthTemplateNET7.Shared.PublicModels;
+@attribute [Authorize]
+@inject HttpClient client_
+@inject StateManagementService sms_
+
+<PageTitleAndHeader Title="Products" />
+
+@if (products != null)
+{
+    <div class="container">
+        @foreach (var item in products)
+        {
+            <div class="row mb-3">
+                <div class="col-3">
+                    <img src="@item.ImgUrl" class="img-fluid rounded-2" />
+                </div>
+                <div class="col-9">
+                    <h2>@item.Name</h2>
+                    <p>@item.Description</p>
+                    <div class="d-flex justify-content-end">
+                        <span class="me-3 pt-2">
+                            @item.Price.ToString("C")
+                        </span>
+                        <button @onclick="() => addToCart(item)" class="btn btn-primary">Add to cart</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <Spinner />
+}
+
+@code {
+    //added
+
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+    Product[] products;
+
+    async Task addToCart(Product product)
+    {
+        await sms_.AddToCartAsync(product);
+        notificationService.Notify($"{product.Name} added to cart", removeAfterSeconds: 8);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await sms_.Init();
+        products = await client_.GetFromJsonAsync<Product[]>("api/products/get-products");
+    }
+}

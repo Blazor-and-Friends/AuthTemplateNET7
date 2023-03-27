@@ -1,5 +1,4 @@
-﻿using AuthTemplateNET7.Server.Services.EmailingServices;
-using AuthTemplateNET7.Shared.Dtos.Public;
+﻿using AuthTemplateNET7.Shared.Dtos.Public;
 using AuthTemplateNET7.Shared.PublicModels;
 using AuthTemplateNET7.Shared.SharedServices;
 using Microsoft.AspNetCore.Authorization;

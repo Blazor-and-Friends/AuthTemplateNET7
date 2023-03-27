@@ -8,7 +8,7 @@ public abstract class SelectBase<T> : BaseInput<T>
     /// <summary>
     /// Optional. The text that will be displayed in the first option element. Default is "Please select..."
     /// </summary>
-    [Parameter] public override string Placeholder { get; set; } //todo DOCS show how the placeholder works with SelectInput
+    [Parameter] public override string Placeholder { get; set; }
 
     protected bool firstOptionSelected;
     protected string firstOptionValue;

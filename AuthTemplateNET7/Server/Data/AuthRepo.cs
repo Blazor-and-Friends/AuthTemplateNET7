@@ -6,22 +6,95 @@ using System.Security.Claims;
 
 namespace AuthTemplateNET7.Server.Data;
 
-public class AuthRepo
+public class AuthRepo : RepoBase
 {
-    private readonly DataContext dataContext;
     private readonly IHashPassword passwordHasher;
 
     const string ADMIN_ROLE_NAME = "Admin";
     const string CUSTOMER_ROLE_NAME = "Customer";
 
-    public AuthRepo(DataContext dataContext)
-    {
-        this.dataContext = dataContext;
-    }
+    public AuthRepo(DataContext dataContext) : base(dataContext) { }
+
     public AuthRepo(DataContext dataContext, IHashPassword passwordHasher) : this(dataContext)
     {
         this.passwordHasher = passwordHasher;
     }
+
+    #region forgot password
+
+    public async Task<(Guid resetToken, bool memberFound, bool serverError)> SetForgotPasswordTokenAsync(ForgotPasswordDto model, string ip)
+    {
+        var member = await dataContext.Members.FirstOrDefaultAsync(m => m.Email == model.Email);
+
+        if(member == null)
+        {
+            await logMemberNotFoundForPasswordReset(model.Email, ip);
+            return (Guid.Empty, false, false);
+        }
+
+        member.ForgotPasswordToken = Guid.NewGuid();
+        member.ForgotPasswordExpiration = DateTime.UtcNow.AddMinutes(90);
+
+        _ = dataContext.Update(member);
+
+        var rows = await dataContext.TrySaveAsync($"Could not create a reset token for Member.Id {member.Id.ToString()} with Member.Email {member.Email}");
+
+        if(rows > 0) return (member.ForgotPasswordToken.Value, true, false);
+        return (Guid.Empty, false, true);
+    }
+
+    public async Task<(bool success, bool serverError, string message, ClaimsPrincipal claimsPrincipal)> ResetPasswordAsync(ResetPasswordDto model)
+    {
+        if(model.ResetToken == Guid.Empty) return (false, false, "Bad request", null);
+
+        var member = await dataContext.Members.Include(m => m.Roles).FirstOrDefaultAsync(m => m.ForgotPasswordToken == model.ResetToken);
+
+        if(member == null) return (false, false, "Bad request", null);
+
+        if(member.ForgotPasswordExpiration.HasValue && member.ForgotPasswordExpiration.Value < DateTime.UtcNow)
+        {
+            return (false, false, "Your reset token has expired.", null);
+        }
+
+        member.ForgotPasswordExpiration = null;
+        member.ForgotPasswordToken = null;
+
+        (string hashedPassword, string hashedSalt) = passwordHasher.Hash(model.Password);
+
+        member.PasswordHash = hashedPassword;
+        member.Salt = hashedSalt;
+
+        _ = dataContext.Update(member);
+
+        var rows = await dataContext.TrySaveAsync($"Could not reset password for Member.Id {member.Id} with Member.Email {member.Email}");
+
+        if(rows > 0)
+        {
+            ClaimsPrincipal cp = new SharedAuthServices().CreateClaimsPrincipal(
+            authenticationType: "serverAuth",
+            email: member.Email,
+            id: member.Id,
+            roles: member.Roles.Select(m => m.Name).ToArray(),
+            username: member.DisplayName);
+
+            return (true, false, null, cp);
+        }
+
+        return (false, true, null, null);
+    }
+
+    Task logMemberNotFoundForPasswordReset(string email, string ip)
+    {
+        LogItem logItem = new($"Someone tried to reset their password with email {email} from <a href='href='https://www.bing.com/search?q={ip}' target='_blank'>{ip}</a>",
+                360,
+                BootstrapColor.Danger);
+
+        _ = dataContext.Add(logItem);
+
+        return dataContext.TrySaveAsync($"Could not log someone trying to reset password with email {email}");
+    }
+
+    #endregion //forgot password
 
     public async Task<Login[]> GetMyLoginsAsync(string emailAddress)
     {
@@ -61,6 +134,7 @@ public class AuthRepo
         if (success) return new SharedAuthServices().CreateClaimsPrincipal(
             authenticationType: "serverAuth",
             email: model.Email,
+            id: memberId.Value,
             roles: memberAnon.Roles.Select(m => m.Name).ToArray(),
             username: memberAnon.DisplayName);
 
@@ -70,7 +144,7 @@ public class AuthRepo
     Task createLogin(string ipAddress, Guid? memberId, bool success, string suppliedEmailAddress)
     {
         Login login = new(ipAddress, memberId, success);
-        dataContext.Add(login);
+        _ = dataContext.Add(login);
         return dataContext.TrySaveAsync($"Could not create Login for Member.Id {memberId.ToString()} with supplied email {suppliedEmailAddress}");
     }
 
@@ -99,7 +173,7 @@ public class AuthRepo
             Salt = hashedSalt
         };
 
-        dataContext.Add(member);
+        _ = dataContext.Add(member);
 
         var rows = await dataContext.TrySaveAsync($"Could not register a member with email address {model.EmailAddress}.");
 
@@ -117,7 +191,8 @@ public class AuthRepo
         ClaimsPrincipal cp = new SharedAuthServices().CreateClaimsPrincipal(
             authenticationType: "serverAuth",
             email: model.EmailAddress,
-            new string[] { CUSTOMER_ROLE_NAME },
+            id: member.Id,
+            roles: new string[] { CUSTOMER_ROLE_NAME },
             username: model.DisplayName);
 
         return (null, cp);
@@ -184,4 +259,34 @@ public class AuthRepo
     }
 
     #endregion //register
+
+    public async Task<bool> VerifyPasswordAsync(Guid memberId, VerifyPasswordDto model)
+    {
+        var member = await dataContext.Members
+            .Where(m => m.Id == memberId)
+            .FirstOrDefaultAsync();
+
+        if (member == null)
+        {
+            LogItem logItem = new($"Someone tried to verify a password. MemberId passed in: {memberId}", deleteAfterDays: 90, bootstrapColor: BootstrapColor.Danger);
+            return false;
+        }
+
+        var success = passwordHasher.VerifyPassword(model.Password, member.PasswordHash, member.Salt);
+
+        if (success)
+        {
+            member.PasswordVerifitedExpiration = DateTime.UtcNow.AddMinutes(2);
+            dataContext.Update(member);
+            await dataContext.TrySaveAsync();
+        }
+        else
+        {
+            LogItem logItem = new($"Password verification failed for Member.Id {memberId} with Member.DisplayName {member.DisplayName}", deleteAfterDays: 90, bootstrapColor: BootstrapColor.Warning);
+
+            await CreateLogItemAsync(logItem);
+        }
+
+        return success;
+    }
 }

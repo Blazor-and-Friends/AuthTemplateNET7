@@ -47,7 +47,7 @@ public class LogItemsSeeder
                     int lines = random.Next(15);
                     for (int j = 0; j < lines; j++)
                     {
-                        logItem.StackTrace += st;
+                        logItem.StackTraceOrJson += st;
                     }
                 }
             }

@@ -1,0 +1,87 @@
+﻿@page "/customer/orders"
+@using AuthTemplateNET7.Shared.PublicModels;
+@attribute [Authorize(Roles = "Customer")]
+@inject HttpClient client_
+
+<PageTitleAndHeader Title="My orders" />
+
+<SplitContainer>
+    <LeftPane>
+        <NavLeftCustomer />
+    </LeftPane>
+    <MainContent>
+        <div class="d-flex justify-content-center">
+            @if (orders != null)
+            {
+                if (orders.Length == 0)
+                {
+                    <p>You don't have any orders</p>
+                }
+                else
+                {
+                    <table cellpadding="5">
+                        @foreach (var o in orders)
+                        {
+                            <tr>
+                                <th class="@o.StatusCss">
+                                    @o.OrderStatus.ToString().TitleCaseToWords()</th>
+                                <td>@o.Date.ToString("dd MMM yyyy")</td>
+                                <td></td>
+                                <th class="text-end">Order total:</th>
+                                <td class="text-end">
+                                    <span class="text-decoration-underline">@o.Total.ToString("C")</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th></th>
+                                <th>Description</th>
+                                <th class="text-end">Unit price</th>
+                                <th class="text-end">Quantity</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                            @foreach (var item in o.OrderItems)
+                            {
+
+                                <tr>
+                                    <td></td>
+                                    <td>@item.Description</td>
+                                    <td class="text-end">@item.UnitPrice.ToString("C")</td>
+                                    <td class="text-end">@item.Quantity</td>
+                                    <td class="text-end">@item.LineTotal.ToString("C")</td>
+                                </tr>
+                            }
+                            @if (o.Memo != null)
+                            {
+                                <tr>
+                                    <th>Memo:</th>
+                                    <td colspan="4">@o.Memo</td>
+                                </tr>
+                            }
+                            <tr>
+                                <td colspan="5">
+                                    <Hr />
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                }
+            }
+            else
+            {
+                <Spinner />
+            }
+        </div>
+    </MainContent>
+</SplitContainer>
+
+@code {
+    //added
+
+    Order[] orders;
+
+    protected override async Task OnInitializedAsync()
+    {
+        orders = await client_.GetFromJsonAsync<Order[]>("api/customers/get-orders");
+        Console.WriteLine(orders.ToJson());
+    }
+}

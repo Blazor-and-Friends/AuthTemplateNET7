@@ -5,10 +5,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
+using AuthTemplateNET7.Server.Services.PaymentServices;
 
-#if DEBUG
 using AuthTemplateNET7.Server.Seeding;
-#endif
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,10 +19,10 @@ var builder = WebApplication.CreateBuilder(args);
     builder.Services.AddScoped<IEmailService, FakeEmailService>();
 #else
     //todo Add production database, IEmailSender
-    throw new NotImplementedException("Need a sql database, implementation of IEmailService");
+    throw new NotImplementedException("Need a sql database");
 
     //temp to check release mode
-    //builder.Services.AddDbContext<DataContext>(opts => opts.UseInMemoryDatabase("dataContext"));
+    builder.Services.AddDbContext<DataContext>(opts => opts.UseInMemoryDatabase("dataContext"));
 #endif
 
 builder.Services.AddAuthentication(opts =>
@@ -42,6 +41,7 @@ builder.Services.AddAuthentication(opts =>
 builder.Services.AddSingleton<BafGlobals>();
 
 builder.Services.AddScoped<IEmailService, NetMailService>();
+builder.Services.AddScoped<StripePaymentService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LinkHelpers>();
 builder.Services.AddScoped<EmailBatchRepo>();

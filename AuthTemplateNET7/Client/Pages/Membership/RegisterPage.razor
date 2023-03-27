@@ -4,7 +4,6 @@
 @using AuthTemplateNET7.Client.FormComponents
 @using System.Net
 @inject HttpClient httpClient_
-@inject IJSRuntime js_
 @inject NavigationManager nav_
 
 <PageTitleAndHeader Title="Register" />
@@ -45,7 +44,6 @@
     }
 </EditFormWrapper>
 
-
 @code {
     //added
 
@@ -75,10 +73,7 @@
 
     async Task validSubmit()
     {
-        //await Task.Delay(2000); //to see what it does
         var response = await httpClient_.PostAsJsonAsync<RegisterDto>("api/membership/register", registerDto);
-
-        Console.WriteLine("is success: " + response.IsSuccessStatusCode);
 
         if(response.IsSuccessStatusCode)
         {

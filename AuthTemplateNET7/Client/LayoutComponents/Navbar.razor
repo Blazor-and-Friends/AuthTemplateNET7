@@ -2,7 +2,7 @@
 @using AuthTemplateNET7.Client.Pages.Dev
 @inject IJSRuntime js_
 
-<nav class="navbar navbar-expand-lg container-fluid @navbarShadowCss">
+<nav id="top-nav-bar" class="navbar navbar-expand-lg container-fluid @navbarShadowCss">
     <div class="container-fluid">
         <NavLink href="" Match="NavLinkMatch.All" class="navbar-brand">AuthTemplateNET7</NavLink>
         <button type="button" @onclick="toggleNavMenu" aria-controls="navbar" aria-expanded="@collapseNavMenu.ToString().ToLower()" class="navbar-toggler @togglerBtnCss" aria-label="Toggle navigation">
@@ -14,7 +14,7 @@
                     <NavLink @onclick="toggleNavMenu" href="" Match="NavLinkMatch.All" class="nav-link">Home</NavLink>
                 </li>
                 <li class="nav-item">
-                    <NavLink @onclick="toggleNavMenu" href="test-page" class="nav-link">Test page</NavLink>
+                    <NavLink @onclick="toggleNavMenu" href="products" class="nav-link">Products</NavLink>
                 </li>
                 <NavDev LinkClickedCallback="toggleNavMenu" />
                 <NavAdmin LinkClickedCallback="toggleNavMenu" />
@@ -26,8 +26,7 @@
                     <label for="dark-theme-toggler" class="form-check-label cursor-pointer">Dark</label>
                 </div>
             </form>
-
-            <LoginPartial />
+            <LoginPartial LinkClickedCallback="toggleNavMenu" />
         </div>
     </div>
 </nav>

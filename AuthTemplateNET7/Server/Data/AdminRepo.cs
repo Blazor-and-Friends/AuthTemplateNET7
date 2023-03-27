@@ -19,7 +19,7 @@ public class AdminRepo
 
     public async Task<DashboardPageModel> GetDashboardPageModelAsync(string appKey)
     {
-        //todo a view in sql server
+        //todo at some point a view in sql server
 
         var contactMessagesCount = await dataContext.ContactMessages.CountAsync();
 
@@ -58,18 +58,18 @@ public class AdminRepo
             if(item.Disposition == Disposition.Save)
             {
                 item.SaveMessage = true;
-                dataContext.Update(item);
+                _ = dataContext.Update(item);
                 savedResult++;
             }
             else if(item.Disposition == Disposition.DeleteNow)
             {
-                dataContext.Remove(item);
+                _ = dataContext.Remove(item);
                 deletedResult++;
             }
             else if(item.Disposition == Disposition.AutoDelete && item.SaveMessage)
             {
                 item.SaveMessage = false;
-                dataContext.Update(item);
+                _ = dataContext.Update(item);
             }
         }
 
@@ -98,14 +98,22 @@ public class AdminRepo
 
         return Task.FromResult(rows);
 #else
-        return dataContext.EmailBatches
+        return dataContext.Batches
             .Where(m => ids.Any(id => m.Id == id))
             .ExecuteDeleteAsync();
 #endif
     }
 
-    public Task<Batch[]> GetEmailBatchesAsync()
+    public Task<Batch[]> GetEmailBatchesAsync(bool isDev)
     {
+        if (isDev)
+        {
+            return dataContext.Batches
+            .OrderByDescending(m => m.DateCreated)
+            .AsNoTracking()
+            .ToArrayAsync();
+        }
+
         return dataContext.Batches
             .Where(m => !m.DevOnly)
             .OrderByDescending(m => m.DateCreated)
@@ -116,7 +124,7 @@ public class AdminRepo
     public Task<Email[]> GetEmailsForBatch(int batchId)
     {
         return dataContext.Emails
-            .Where(m => m.EmailBatchId == batchId)
+            .Where(m => m.BatchId == batchId)
             .OrderBy(m => m.ToAddress)
             .AsNoTracking()
             .ToArrayAsync();
@@ -143,7 +151,7 @@ public class AdminRepo
 
         if (needsUpdating)
         {
-            dataContext.Update(batch);
+            _ = dataContext.Update(batch);
             var rows = await dataContext.TrySaveAsync($"Could not change BatchStatus on {batch.Subject} with Id {batch.Id}");
 
             if (rows > 0) return (true, null);
@@ -167,7 +175,7 @@ public class AdminRepo
             return (CreateRecipientResult.RecipientExists, existing);
         }
 
-        dataContext.Add(model);
+        _ = dataContext.Add(model);
 
         var rows = await dataContext.TrySaveAsync($"Could not create recipient {model.ToJson(true)}");
         if (rows > 0) return (CreateRecipientResult.Success, model);
@@ -182,7 +190,7 @@ public class AdminRepo
 
     public async Task<bool> UpdateRecipient(Recipient model)
     {
-        dataContext.Update(model);
+        _ = dataContext.Update(model);
 
         return await dataContext.TrySaveAsync($"Could not update recipient: {model.ToJson(true)}") != -1;
     }
@@ -210,12 +218,12 @@ public class AdminRepo
         if (setting == null)
         {
             setting = new(AdminSettings.Key, RoleLevel.Admin, model);
-            dataContext.Add(setting);
+            _ = dataContext.Add(setting);
         }
         else
         {
             setting.Value = model.ToJson();
-            dataContext.Update(setting);
+            _ = dataContext.Update(setting);
         }
 
         return await dataContext.TrySaveAsync($"Could not save admin settings: \r\n{model.ToJson(true)}") > 0;

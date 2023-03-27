@@ -1,4 +1,7 @@
-﻿using AuthTemplateNET7.Shared;
+﻿using AuthTemplateNET7.Server.Services.EmailingServices.NetMailHelpers;
+using AuthTemplateNET7.Server.Services.PaymentServices;
+using AuthTemplateNET7.Shared;
+using AuthTemplateNET7.Shared.Dtos.Dev;
 using AuthTemplateNET7.Shared.PublicModels;
 using AuthTemplateNET7.Shared.PublicModels.SiteSettingModels;
 using AuthTemplateNET7.Shared.PublicModels.SiteSettingModels.Models.DevSettings;
@@ -61,7 +64,6 @@ public class DevRepo
             if (idsDict.ContainsKey(item.Id)) dataContext.Remove(item);
         }
 
-        //todo DOCS make a vid showing how i use trysave/trysaveAsync
         var rows = dataContext.TrySave($"Could not delete {ids.Length} log items");
 
         return Task.FromResult(rows);
@@ -82,6 +84,44 @@ public class DevRepo
 
     #endregion //LogItems
 
+    #region Net.Mail account
+
+    public void DeleteNetMailAccountInfo(BafGlobals bafGlobals)
+    {
+        new NetMailAccountHelper(bafGlobals).DeleteAccount();
+    }
+
+    public NetMailAccountStatusDto GetNetMailAccountStatusDto(BafGlobals bafGlobals)
+    {
+        return new NetMailAccountHelper(bafGlobals).GetStatusDto();
+    }
+
+    public async Task<(NetMailAccountDto dto, string errorMessage)> GetNetMailAccountAsync(BafGlobals bafGlobals, Guid memberId)
+    {
+        var member = await dataContext.Members.FindAsync(memberId);
+
+        if (member.PasswordVerifitedExpiration == null)
+        {
+            return (null, "Hmm...");
+        }
+
+        if (DateTime.UtcNow > member.PasswordVerifitedExpiration.Value)
+        {
+            return (null, "Password verification token expired.");
+        }
+
+        member.PasswordVerifitedExpiration = null;
+        dataContext.Update(member);
+        _ = await dataContext.TrySaveAsync();
+
+        var dto = new NetMailAccountHelper(bafGlobals).GetDto();
+
+        return (dto, null);
+    }
+
+
+    #endregion //Net.Mail account
+
     #region SiteSettings
 
     public async Task<EmailSettings> GetEmailSettingsAsync()
@@ -92,7 +132,9 @@ public class DevRepo
 
         if (setting == null) return new EmailSettings();
 
-        return setting.Value.FromJson<EmailSettings>();
+        var result = setting.Value.FromJson<EmailSettings>();
+        result.UpdateTimes();
+        return result;
     }
 
     public async Task<DevSettings> GetSettingsAsync()
@@ -113,12 +155,12 @@ public class DevRepo
         if (setting == null)
         {
             setting = new(EmailSettings.Key, RoleLevel.Dev, model);
-            dataContext.Add(setting);
+            _ = dataContext.Add(setting);
         }
         else
         {
             setting.Value = model.ToJson();
-            dataContext.Update(setting);
+            _ = dataContext.Update(setting);
         }
 
         return await dataContext.TrySaveAsync($"Could not save email settings:\r\n{model.ToJson(true)}") > 0;
@@ -131,16 +173,88 @@ public class DevRepo
         if(setting == null)
         {
             setting = new(DevSettings.Key, RoleLevel.Dev, model);
-            dataContext.Add(setting);
+            _ = dataContext.Add(setting);
         }
         else
         {
             setting.Value = model.ToJson();
-            dataContext.Update(setting);
+            _ = dataContext.Update(setting);
         }
 
         return await dataContext.TrySaveAsync($"Could not save dev settings: \r\n: {model.ToJson(true)}") > 0;
     }
 
     #endregion //SiteSettings
+
+    #region Stripe Account
+
+    public StripeAccountStatusDto CheckStripeAccountStatus(BafGlobals bafGlobals)
+    {
+        var account = new StripeAccountHelper(bafGlobals).StripeAccount;
+
+        string liveKeysStatus;
+        if (!string.IsNullOrWhiteSpace(account.PublishableKey)
+            && !string.IsNullOrWhiteSpace(account.SecretKey))
+        {
+            liveKeysStatus = "Your live keys are stored";
+        }
+        else
+        {
+            liveKeysStatus = "You have not set your live keys";
+        }
+
+        string testKeysStatus;
+        if (!string.IsNullOrWhiteSpace(account.TestPublishableKey)
+            && !string.IsNullOrWhiteSpace(account.TestSecretKey))
+        {
+            testKeysStatus = "Your test keys are stored";
+        }
+        else
+        {
+            testKeysStatus = "You have not set your test keys";
+        }
+
+        return new()
+        {
+            LiveKeysStatus = liveKeysStatus,
+            TestKeysStatus = testKeysStatus,
+            TestModeStatus = account.TestModeOn ? "You are in TEST mode" : "You are LIVE",
+        };
+    }
+
+    public async Task<(StripeAccountDto dto, string errorMessage)> GetStripeAccountAsync(BafGlobals bafGlobals, Guid memberId)
+    {
+        var member = await dataContext.Members.FindAsync(memberId);
+
+        if (member.PasswordVerifitedExpiration == null)
+        {
+            return (null, "Hmm...");
+        }
+
+        if (DateTime.UtcNow > member.PasswordVerifitedExpiration.Value)
+        {
+            return (null, "Password verification token expired.");
+        }
+
+        member.PasswordVerifitedExpiration = null;
+        dataContext.Update(member);
+        _ = await dataContext.TrySaveAsync();
+
+        var dto = new StripeAccountHelper(bafGlobals).GetDto();
+
+        return (dto, null);
+    }
+
+    public void SetStripeAccount(BafGlobals bafGlobals, StripeAccountDto model)
+    {
+        if (model.DeleteAccount)
+        {
+            new StripeAccountHelper(bafGlobals).DeleteAccount();
+            return;
+        }
+
+        new StripeAccountHelper(bafGlobals).SaveAccount(model);
+    }
+
+    #endregion //Stripe Account
 }

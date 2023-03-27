@@ -1,0 +1,22 @@
+﻿@page "/thank-you/{guidStr}"
+@using AuthTemplateNET7.Client.ClientServices
+@attribute [Authorize]
+@inject HttpClient client_
+@inject StateManagementService sms_
+
+
+<PageTitleAndHeader Title="Thank you" />
+
+<p class="text-center">You can view your orders on your <a href="/customer/orders">orders page</a>.</p>
+
+<p class="text-center">If you have any questions, please <a href="/contact">contact us</a>.</p>
+
+@code {
+    [Parameter]public string GuidStr { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await sms_.Init();
+        await sms_.ClearCartAsync();
+    }
+}

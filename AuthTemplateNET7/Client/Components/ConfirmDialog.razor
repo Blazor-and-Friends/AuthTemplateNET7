@@ -72,12 +72,12 @@
     /// <summary>
     /// Shows a modal confirm dialog box
     /// </summary>
-    /// <param name="htmlMessage">The message you want the user to see. Can be HTML</param>
-    /// <param name="title">The title of the modal. Default is null</param>
+    /// <param name="htmlMessage">The message you want the user to see. Can be HTML. Default is "Are you sure?"</param>
+    /// <param name="title">The title of the modal. Default is "Confirm"</param>
     /// <param name="confirmButtonText">The text for the confirm button. Default is "Yes"</param>
     /// <param name="cancelButtonText">The text for the cancel button. Default is "No"</param>
     /// <returns>Whether the user clicked the confirm button</returns>
-    public async Task<bool> ConfirmAsync(string htmlMessage, string title = null, string confirmButtonText = "Yes", string cancelButtonText = "No")
+    public async Task<bool> ConfirmAsync(string htmlMessage = "Are you sure?", string title = "Confirm", string confirmButtonText = "Yes", string cancelButtonText = "No")
     {
         if (title == null) ariaLabelledById = modalBodyId;
         else ariaLabelledById = modalTitleId;
@@ -99,7 +99,7 @@
         zIndex = -100;
         StateHasChanged();
 
-        waitingForResponse = true;
+        waitingForResponse = true; //reset if confirm gets called again
 
         return result;
     }

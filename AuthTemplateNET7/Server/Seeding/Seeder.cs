@@ -1,6 +1,4 @@
-﻿#if DEBUG //todo DOCS note that the seeding only gets compiled if in DEBUG
-
-namespace AuthTemplateNET7.Server.Seeding;
+﻿namespace AuthTemplateNET7.Server.Seeding;
 
 //added
 public class Seeder
@@ -23,10 +21,7 @@ public class Seeder
         MembersSeeder membersSeeder = new(dataContext);
 
         //use these for whatever else you may need to seed.
-        var members = membersSeeder.SeedMembersAndRoles();
-
-        //SiteSetupService siteSetupService = new(dataContext);
-        //var siteSettings = siteSetupService.SetupSiteSettingsAsync(appKey).GetAwaiter().GetResult();
+        var members = membersSeeder.SeedMembersAndRoles(true);
 
         //ContactMessagesSeeder contactMessagesSeeder = new(dataContext, random, seederServices);
         //contactMessagesSeeder.Seed(3, 50);
@@ -36,6 +31,15 @@ public class Seeder
 
         //LogItemsSeeder logItemsSeeder = new(dataContext, random, seederServices);
         //logItemsSeeder.Seed(10, 50);
+
+        ProductsSeeder productsSeeder = new(dataContext, random);
+        var products = productsSeeder.Seed(true, 5, 5);
+
+        //OrdersSeeder ordersSeeder = new(dataContext, members, random, seederServices);
+
+        //ordersSeeder.SeedSingle(products.First());
+
+        //ordersSeeder.Seed(products, 3, 15, 1, 10);
 
         //RecipientsSeeder recipientSeeder = new(dataContext, random, seederServices);
         //recipientSeeder.Seed(5, 50);
@@ -47,4 +51,3 @@ public class Seeder
     }
 
 }
-#endif

@@ -1,0 +1,32 @@
+﻿@using AuthTemplateNET7.Client.ClientServices
+@implements IDisposable
+@inject StateManagementService sms_
+
+<ul class="navbar-nav">
+    <li>
+        <NavLink href="shopping-cart" class="btn btn-primary ms-2 position-relative">
+            <i class="bi bi-cart3"></i>
+            @if (sms_.ItemsCount > 0)
+            {
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    @sms_.ItemsCount
+                </span>
+            }
+        </NavLink>
+    </li>
+</ul>
+
+@code {
+    //added
+
+    protected override async Task OnInitializedAsync()
+    {
+        sms_.CartChanged += StateHasChanged;
+        await sms_.Init();
+    }
+
+    public void Dispose()
+    {
+        sms_.CartChanged -= StateHasChanged;
+    }
+}

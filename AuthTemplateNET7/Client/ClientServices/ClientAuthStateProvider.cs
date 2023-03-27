@@ -25,7 +25,7 @@ public class ClientAuthStateProvider : AuthenticationStateProvider
 
         if (authedMemberDto is not null && authedMemberDto.Email is not null)
         {
-            claimsPrincipal = new SharedAuthServices().CreateClaimsPrincipal("clientAuth", email: authedMemberDto.Email, roles: authedMemberDto.Roles, username: authedMemberDto.DisplayName);
+            claimsPrincipal = new SharedAuthServices().CreateClaimsPrincipal("clientAuth", email: authedMemberDto.Email, authedMemberDto.Id, roles: authedMemberDto.Roles, username: authedMemberDto.DisplayName);
         }
         else
         {

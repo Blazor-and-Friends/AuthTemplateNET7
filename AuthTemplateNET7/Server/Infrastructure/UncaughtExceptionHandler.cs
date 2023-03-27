@@ -1,5 +1,4 @@
-﻿using AuthTemplateNET7.Server.Services.EmailingServices;
-using AuthTemplateNET7.Shared.PublicModels;
+﻿using AuthTemplateNET7.Shared.PublicModels;
 using AuthTemplateNET7.Shared.PublicModels.SiteSettingModels.Models.DevSettings;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,7 +27,7 @@ public class UncaughtExceptionHandler
             {
                 Email sentEmail = new(devSettings.SendNotificationsTo);
 
-                string body = $"<p><b>Exception message:</b>&nbsp;{logItem.ErrorMessage}. <b>Stacktrace:</b></p><pre>{logItem.StackTrace}</pre><p>Check your {linkHelpers.GetLogItemsPageLink()}.</p>"; //log item has innerexception message
+                string body = $"<p><b>Exception message:</b>&nbsp;{logItem.ErrorMessage}. <b>Stacktrace:</b></p><pre>{logItem.StackTraceOrJson}</pre><p>Check your {linkHelpers.GetLogItemsPageLink()}.</p>"; //log item has innerexception message
 
                 Batch emailBatch = new(
                     body,

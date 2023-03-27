@@ -14,7 +14,9 @@ public class EmailBatchRepo
 {
     private readonly DataContext dataContext;
     private readonly IEmailService emailService;
+    EmailSettings emailSettings;
     private readonly LinkHelpers linkHelpers;
+    SiteSetting siteSettingEmail;
 
     /// <summary>
     /// To avoid Admin trying to update a batch currently being processed
@@ -32,19 +34,7 @@ public class EmailBatchRepo
     {
         //todo at some point processing batches needs unit testing
 
-        var setting = await dataContext.SiteSettings.Where(m => m.Key == EmailSettings.Key).FirstOrDefaultAsync();
-
-        if (setting == null)
-        {
-            LogItem logItem = new("EmailSettings have not been set up");
-            dataContext.Add(logItem);
-            await dataContext.TrySaveAsync("Could not add log item to notify EmailSettings not set up");
-            return;
-        }
-
-        EmailSettings emailSettings = setting.Value.FromJson<EmailSettings>();
-
-        if (!emailSettings.EmailingOn) return;
+        if (await emailingIsOn() == false) return;
 
         int availableToSendCount = emailSettings.AvailableToSend();
 
@@ -92,25 +82,29 @@ public class EmailBatchRepo
                 else
                 {
                     LogItem logItem = new(exception, $"Could not send email to {email.ToAddress} with subject {b.Subject}. Batch.Id: {b.Id} Email.Id: {email.Id}");
-                    dataContext.Add(logItem);
+                    _ = dataContext.Add(logItem);
 
                     email.EmailSendResult = EmailSendResult.Error;
 
                     b.ErrorsCount++;
                 }
 
-                dataContext.Update(email);
+                _ = dataContext.Update(email);
 
                 sentCount++;
             }
 
+            DateTime endedSendingTime = DateTime.UtcNow;
+
             if(b.ErrorsCount + b.SentEmailsCount >= b.TotalEmailsCount)
             {
-                b.DateCompleted = DateTime.UtcNow;
+                b.DateCompleted = endedSendingTime;
                 b.BatchStatus = BatchStatus.Complete;
             }
 
-            dataContext.Update(b);
+            updateSiteSetting(endedSendingTime, sentCount);
+
+            _ = dataContext.Update(b);
 
             if (sentCount >= availableToSendCount) break;
         }
@@ -118,16 +112,25 @@ public class EmailBatchRepo
         await dataContext.TrySaveAsync($"Could not save a ProcessBatches() run");
     }
 
-    public async Task<bool> SendSingleEmailAsync(string body, string subject, string toAddress, bool appendUnsubscribeLink, Priority priority = Priority.High, string toName = null, Guid? recipientId = null, int deleteAfterDays = 365)
+    public async Task<EmailSendResult> SendSingleEmailAsync(string body, bool devOnly, string subject, string toAddress, bool appendUnsubscribeLink, Priority priority = Priority.High, string toName = null, Guid? recipientId = null, int deleteAfterDays = 365)
     {
-        //todo at some point If your emailing services rate limits you, you'll need to set up checks. Especially if you're using System.Net.Mail.SmtpClient as there will be no indication the send attempt was rejected.
+        if (await emailingIsOn() == false) return EmailSendResult.Error;
 
-        if(appendUnsubscribeLink && recipientId == null)
+        if (appendUnsubscribeLink && recipientId == null)
         {
             throw new ArgumentNullException("YOU NEED A recipientId IN ORDER TO APPEND AN UNSUBSCRIBE LINK");
         }
 
-        Batch batch = createBatchWithOneRecipient(appendUnsubscribeLink, body, deleteAfterDays, priority, recipientId, subject, toAddress, toName);
+        Batch batch = createBatchWithOneRecipient(appendUnsubscribeLink, body, deleteAfterDays, devOnly, priority, recipientId, subject, toAddress, toName);
+
+        int availableToSendCount = emailSettings.AvailableToSend();
+
+        if(availableToSendCount < 1)
+        {
+            dataContext.Add(batch);
+            _ = await dataContext.TrySaveAsync($"Could not save batch");
+            return EmailSendResult.Pending;
+        }
 
 #pragma warning disable CS0618
         var exception = await emailService.SendAsync(batch.Body, subject, toAddress);
@@ -137,7 +140,7 @@ public class EmailBatchRepo
 
         string saveMsg;
 
-        if (exception != null)
+        if (exception == null)
         {
             DateTime utcNow = DateTime.UtcNow;
 
@@ -155,23 +158,27 @@ public class EmailBatchRepo
             batch.ErrorsCount = 1;
             recip.EmailSendResult = EmailSendResult.Error;
             LogItem logItem = new(exception, $"Could not send email to {toAddress} with body {batch.Body}");
-            dataContext.Add(logItem);
+            _ = dataContext.Add(logItem);
 
             saveMsg = $"Could not send an emal to {toAddress}";
         }
 
-        dataContext.Add(batch);
+        _ = dataContext.Add(batch);
+
+        updateSiteSetting(DateTime.UtcNow, 1);
 
         await dataContext.TrySaveAsync(saveMsg + " but did not save the EmailBatch");
 
-        return exception == null;
+        if (exception == null) return EmailSendResult.Success;
+        return EmailSendResult.Error;
     }
 
-    Batch createBatchWithOneRecipient(bool appendUnsubscribeLink, string body, int deleteAfterDays, Priority priority, Guid? recipientId, string subject, string toAddress, string toName)
+    Batch createBatchWithOneRecipient(bool appendUnsubscribeLink, string body, int deleteAfterDays, bool devOnly, Priority priority, Guid? recipientId, string subject, string toAddress, string toName)
     {
 
         Batch result = new() {
             DeleteAfter = DateTime.UtcNow.AddDays(deleteAfterDays),
+            DevOnly = devOnly,
             Priority = priority,
             Subject = subject,
             TotalEmailsCount = 1
@@ -199,5 +206,30 @@ public class EmailBatchRepo
         };
 
         return result;
+    }
+
+    async Task<bool> emailingIsOn()
+    {
+        siteSettingEmail = await dataContext.SiteSettings.Where(m => m.Key == EmailSettings.Key).FirstOrDefaultAsync();
+
+        if (siteSettingEmail == null)
+        {
+            LogItem logItem = new("EmailSettings have not been set up");
+            _ = dataContext.Add(logItem);
+            await dataContext.TrySaveAsync("Could not add log item to notify EmailSettings not set up");
+            return false;
+        }
+
+        emailSettings = siteSettingEmail.Value.FromJson<EmailSettings>();
+        emailSettings.UpdateTimes();
+
+        return emailSettings.EmailingOn;
+    }
+
+    public void updateSiteSetting(DateTime endedSendingTime, int sentCount)
+    {
+        emailSettings.UpdateAccumulators(endedSendingTime, sentCount);
+        siteSettingEmail.Value = emailSettings.ToJson();
+        dataContext.Update(siteSettingEmail);
     }
 }

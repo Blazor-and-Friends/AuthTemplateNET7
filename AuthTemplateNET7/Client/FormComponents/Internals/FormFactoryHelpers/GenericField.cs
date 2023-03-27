@@ -16,7 +16,7 @@ namespace AuthTemplateNET7.Client.FormComponents.Internals.FormFactoryHelpers;
 //added
 public class GenericField<TModel>
 {
-    //todo ASAP remove all sequence++ and hardcode (these are in your custom components too) https://chrissainty.com/building-components-via-rendertreebuilder/
+    //todo ASAP remove all sequence++ and hardcode (with open/close region) (these are in your custom components too) https://gist.github.com/SteveSandersonMS/ec232992c2446ab9a0059dd0fbc5d0c3
     public GenericField(FormFactory<TModel> form, PropertyInfo propertyInfo)
     {
         this.form_ = form;
@@ -425,7 +425,7 @@ public class GenericField<TModel>
                     return (typeof(InputText), formControl, "datetime-local", null);
                 }
 
-                //todo use at some point dataType.CustomDataType for inline checkboxes, inline radios
+                //todo at some point use dataType.CustomDataType for inline checkboxes, inline radios
                 if (string.Equals(
                     dataTypeAttribute_.CustomDataType,
                     "Color",

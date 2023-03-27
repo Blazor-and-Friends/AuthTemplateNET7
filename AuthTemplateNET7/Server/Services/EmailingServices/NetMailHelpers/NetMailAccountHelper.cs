@@ -8,8 +8,6 @@ public class NetMailAccountHelper
 {
     string key;
 
-    public bool AccountIsStored { get; set; }
-
     public NetMailAccount NetMailAccount { get; }
 
     public NetMailAccountHelper(BafGlobals bafGlobals)
@@ -22,7 +20,7 @@ public class NetMailAccountHelper
     public void DeleteAccount()
     {
 #if DEBUG
-        Environment.SetEnvironmentVariable(key, null, EnvironmentVariableTarget.User); //make it easier to remove old/unused from the Windows interface
+        Environment.SetEnvironmentVariable(key, null, EnvironmentVariableTarget.User);
 #else
         Environment.SetEnvironmentVariable(key, null);
 #endif
@@ -34,25 +32,29 @@ public class NetMailAccountHelper
 
         return new()
         {
-            AccountIsStored = true //no need to expose the account
+            Address = NetMailAccount.Address,
+            Name = NetMailAccount.Name,
+            Username = NetMailAccount.Username,
+            Password = NetMailAccount.Password,
+            EnableSsl = NetMailAccount.EnableSsl,
+            Host = NetMailAccount.Host,
+            Port = NetMailAccount.Port,
         };
     }
 
-    public string SaveAccount(NetMailAccountDto model)
+    public NetMailAccountStatusDto GetStatusDto()
     {
-        //short-circuit saving if developer is on the page only to send a sample email
-        if (
-            string.IsNullOrWhiteSpace(model.Address)
-            || string.IsNullOrWhiteSpace(model.Host)
-            || string.IsNullOrWhiteSpace(model.Name)
-            || string.IsNullOrWhiteSpace(model.Password)
-            || model.Port < 1
-            || string.IsNullOrWhiteSpace(model.Username)
-            )
-        {
-            return null;
-        }
+        string message = NetMailAccount == null ? "You have not set up a Net.Mail account" : "Your Net.Mail account is set up. Use the form below if you want to test it.";
 
+        return new()
+        {
+            HaveAccountInfo = NetMailAccount != null,
+            StatusMessage = message,
+        };
+    }
+
+    public void SaveAccount(NetMailAccountDto model)
+    {
         NetMailAccount result = new()
         {
             Address = model.Address,
@@ -65,12 +67,10 @@ public class NetMailAccountHelper
         };
 
 #if DEBUG
-        Environment.SetEnvironmentVariable(key, result.ToJson(), EnvironmentVariableTarget.User); //make it easier to remove old/unused from the Windows interface
+        Environment.SetEnvironmentVariable(key, result.ToJson(), EnvironmentVariableTarget.User);
 #else
         Environment.SetEnvironmentVariable(key, result.ToJson());
 #endif
-
-        return "Account created/updated";
     }
 
     #region helpers
@@ -86,8 +86,6 @@ public class NetMailAccountHelper
 #endif
 
         if(value == null) return null;
-
-        AccountIsStored = true;
 
         return value.FromJson<NetMailAccount>();
     }

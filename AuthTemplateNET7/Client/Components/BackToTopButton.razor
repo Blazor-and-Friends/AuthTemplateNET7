@@ -1,0 +1,17 @@
+﻿@inject IJSRuntime js_
+
+<button @onclick="scrollToTop" class="btn btn-sm btn-outline-info">
+    <i class="bi bi-arrow-up"></i>
+</button>
+
+@code {
+    //added
+
+    /*
+     * Place this on any page or in any component as needed. For site-wide use, place on MainLayout.razor. Is buggy on mobile.
+     */
+    async void scrollToTop()
+    {
+        await js_.InvokeVoidAsync("tf.scrollToElementById", "top-nav-bar");
+    }
+}

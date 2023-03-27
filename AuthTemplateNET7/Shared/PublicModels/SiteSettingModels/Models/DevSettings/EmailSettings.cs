@@ -11,6 +11,8 @@ namespace AuthTemplateNET7.Shared.PublicModels.SiteSettingModels.Models.DevSetti
 //todo EmailSettings should be run through unit tests
 public class EmailSettings
 {
+    bool timesAreUpdated = false;
+
     #region editable props
 
     public bool EmailingOn { get; set; }
@@ -25,7 +27,7 @@ public class EmailSettings
 
     #endregion //editable props
 
-    #region accumulator
+    #region accumulators
 
     [FormFactoryIgnore, Obsolete("Public setter for ef, json only")]
     public int Month { get; set; }
@@ -47,17 +49,36 @@ public class EmailSettings
     [FormFactoryIgnore, Obsolete("Public setter for ef, json only")]
     public int SentInLastMinuteCount { get; set; }
 
-    #endregion //accumulator
+    #endregion //accumulators
+
 
 #pragma warning disable CS0618
+
+    #region UI
+
+    public string AvailableMonth => MaxPerMonth.HasValue ? (MaxPerMonth.Value - SentThisMonthCount).ToString("N0") : "N/A";
+
+    public string AvailableDay => MaxPerDay.HasValue ? (MaxPerDay.Value - SentThisDayOfMonthCount).ToString("N0") : "N/A";
+
+    public string AvailableHour => MaxPerHour.HasValue ? (MaxPerHour.Value - SentInLastHourCount).ToString("N0") : "N/A";
+
+    public string AvailableMinute => MaxPerMinute.HasValue ? (MaxPerMinute.Value - SentInLastMinuteCount).ToString("N0") : "N/A";
+
+    #endregion //UI
     public int AvailableToSend()
     {
+        if (!timesAreUpdated) throw new InvalidOperationException("EmailSettings.UpdateTimes() MUST BE CALLED BEFORE CALLING AvailableToSend()");
+
         int result = 0;
         int temp = 0;
 
         if (MaxPerMonth.HasValue)
         {
             result = MaxPerMonth.Value - SentThisMonthCount;
+        }
+        else
+        {
+            result = int.MaxValue;
         }
 
         if (MaxPerDay.HasValue)
@@ -131,23 +152,23 @@ public class EmailSettings
         }
     }
 
-    public EmailSettings()
+    public void UpdateTimes()
     {
         DateTime utcNow = DateTime.UtcNow;
 
-        if(Month != utcNow.Month)
+        if (Month != utcNow.Month)
         {
             Month = utcNow.Month;
             SentThisMonthCount = 0;
         }
 
-        if(DayOfMonth != utcNow.Day)
+        if (DayOfMonth != utcNow.Day)
         {
             DayOfMonth = utcNow.Day;
             SentThisDayOfMonthCount = 0;
         }
 
-        if(Hour != utcNow.Hour)
+        if (Hour != utcNow.Hour)
         {
             Hour = utcNow.Hour;
             SentInLastHourCount = 0;
@@ -157,12 +178,19 @@ public class EmailSettings
         }
         else
         {
-            if(Minute != utcNow.Minute)
+            if (Minute != utcNow.Minute)
             {
                 Minute = utcNow.Minute;
                 SentInLastMinuteCount = 0;
             }
         }
+
+        timesAreUpdated = true;
+    }
+
+    public EmailSettings()
+    {
+        UpdateTimes();
     }
 #pragma warning restore CS0618
 

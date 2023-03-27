@@ -1,68 +1,153 @@
 ﻿@page "/dev/net-mail-account"
+@using AuthTemplateNET7.Shared;
 @attribute [Authorize(Roles = "Dev")]
 @inject HttpClient client_
 @inject NavigationManager nav_
 
-<PageTitleAndHeader Title="Create Net Mail Account" />
+
+<ConfirmDialog @ref="confirmDialog" />
+<Spinner @ref="spinner" />
+<VerifyPasswordDialog @ref="verifyPasswordDialog" />
+
+<PageTitleAndHeader Title="Net Mail Account" />
 
 <SplitContainer>
     <LeftPane>
         <NavLeftDev />
     </LeftPane>
     <MainContent>
+        @if(netMailAccountStatusDto != null)
+        {
+            <div class="d-flex justify-content-center">
+                <table cellpadding="5">
+                    <tr>
+                        <th>Account status</th>
+                        <td class="@netMailAccountStatusDto.TableCss">@netMailAccountStatusDto.StatusMessage</td>
+                    </tr>
+                </table>
+            </div>
+            @if(netMailAccountStatusDto.HaveAccountInfo)
+            {
+                <EditFormWrapper Model="netMailAccountStatusDto"
+                         OnValidSubmit="() => sendSampleEmail(false)"
+                         SubmitButtonText="Send sample email">
+
+                    <FormFactory Model="netMailAccountStatusDto" />
+
+                </EditFormWrapper>
+            }
+
+            <div class="d-flex justify-content-center">
+                <button @onclick="getAccount" type="button" class="btn btn-outline-info mt-3">Create/edit/view account</button>
+            </div>
+        }
+
         @if(account != null)
         {
-            <EditFormWrapper Model="account" OnValidSubmit="validSubmit" ShowRequiredFieldsReminder="false">
-
-                @if(account.AccountIsStored)
-                {
-                    <div class="alert alert-success" role="alert">
-                        <h4 class="alert-heading">Account info is stored</h4>
-                        <p class="fst-italic">Use the form below to change or delete the account, or to test the account info is correct.</p>
-                    </div>
-                }
+            <p><span class="fw-bold">Note:</span> In <code>Server.Program.cs</code>, you'll need to make sure the <code>IEmailService</code> is using <code>NetMailService</code>, i.e. <code>builder.Services.AddScoped&lt;IEmailService, NetMailService>();</code> for this to work.</p>
+            <EditFormWrapper Model="account" OnValidSubmit="validSubmit">
 
                 <FormFactory Model="account" />
+                <button type="button" @onclick="deleteAccount" class="btn btn-danger me-3">Delete account info</button>
             </EditFormWrapper>
-        }
-        else
-        {
-            <Spinner />
+
+
         }
     </MainContent>
 </SplitContainer>
 
-<ConfirmDialog @ref="confirmDialog" />
-
 @code {
     //added
 
-    [CascadingParameter] public NotificationService notificationService { get; set; }
-
     NetMailAccountDto account;
     ConfirmDialog confirmDialog;
+    NetMailAccountStatusDto netMailAccountStatusDto;
+    [CascadingParameter] public NotificationService notificationService { get; set; }
+    Spinner spinner;
+    VerifyPasswordDialog verifyPasswordDialog;
+
+    public async Task deleteAccount()
+    {
+        var yes = await confirmDialog.ConfirmAsync("Are you sure you want to delete the account info? This action can not be undone", "Confirm Delete");
+
+        if (!yes) return;
+
+        var response = await client_.PostAsync("api/dev/delete-net-mail-account-info", null);
+
+        if (response.IsSuccessStatusCode)
+        {
+            notificationService.Notify("Net.Mail account info deleted", BootstrapColor.Warning);
+            nav_.NavigateTo("dev/dashboard");
+        }
+        else
+        {
+            await notificationService.NotifyNonSuccessResponseAsync(response);
+        }
+    }
+
+    async Task getAccount()
+    {
+        var success = await verifyPasswordDialog.PasswordVerifiedAsync();
+
+        if (success)
+        {
+            spinner.ShowSpinner("Fetching account info...");
+            account = await client_.GetFromJsonAsync<NetMailAccountDto>("api/dev/get-net-mail-account");
+            netMailAccountStatusDto = null;
+            spinner.HideSpinner();
+        }
+        else
+        {
+            notificationService.Notify("Canceled or incorrect password", alertLevel: BootstrapColor.Warning);
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        account = await client_.GetFromJsonAsync<NetMailAccountDto>("api/dev/get-net-mail-account");
+        netMailAccountStatusDto = await client_.GetFromJsonAsync<NetMailAccountStatusDto>("api/dev/check-net-mail-account-status");
+
+        spinner.HideSpinner();
+    }
+
+    async Task sendSampleEmail(bool navigateToDashboard)
+    {
+        var response = await client_.PostAsJsonAsync<NetMailAccountStatusDto>("api/dev/send-sample-email", netMailAccountStatusDto);
+
+        spinner.HideSpinner();
+
+        if (response.IsSuccessStatusCode)
+        {
+            var contentStr = await response.Content.ReadAsStringAsync();
+            notificationService.Notify(contentStr);
+            if (navigateToDashboard) nav_.NavigateTo("dev/dashboard");
+        }
+        else
+        {
+            await notificationService.NotifyNonSuccessResponseAsync(response);
+        }
     }
 
     async Task validSubmit()
     {
-        if(account.DeleteAccount)
-        {
-            var yes = await confirmDialog.ConfirmAsync("Are you sure you want to delete the account info? This action can not be undone", "Confirm Delete");
-
-            if (!yes) return;
-        }
-
         var response = await client_.PostAsJsonAsync<NetMailAccountDto>("api/dev/set-net-mail-account", account);
-
-        var contentStr = await response.Content.ReadAsStringAsync();
 
         if (response.IsSuccessStatusCode)
         {
-            notificationService.Notify(contentStr, removeAfterSeconds: 10);
+            notificationService.Notify("Net.Mail account info saved");
+
+            if(account.SendSampleEmailTo != null)
+            {
+                string address = account.SendSampleEmailTo;
+                spinner.ShowSpinner($"Sending sample email to {address}");
+
+                account = null;
+
+                netMailAccountStatusDto = new() { SendSampleEmailTo = address, HaveAccountInfo = true, StatusMessage = "Your Net.Mail account is set up." };
+
+                await sendSampleEmail(true);
+                return;
+            }
+
             nav_.NavigateTo("dev/dashboard");
             return;
         }

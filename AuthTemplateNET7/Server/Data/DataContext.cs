@@ -27,6 +27,12 @@ public class DataContext : DbContext
 
     public DbSet<LogItem> LogItems { get; set; }
 
+    public DbSet<Product> Products { get; set; }
+
+    public DbSet<Order> Orders { get; set; }
+
+    public DbSet<OrderItem> OrderItems { get; set; }
+
     public DbSet<Recipient> Recipients { get; set; }
 
     public DbSet<SiteSetting> SiteSettings { get; set; }

@@ -6,13 +6,6 @@
 
 <PageTitleAndHeader Title="Contact" MetaDescription="Contact us" />
 
-@if (showBellCommercial)
-{
-    <div class="d-flex justify-content-center">
-        <iframe width="200" height="112" src="https://www.youtube-nocookie.com/embed/HO17B-ACRn0?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-    </div>
-}
-
 <EditFormWrapper Model="contact" OnValidSubmit="validSubmit" SubmitButtonText="Send message">
 
     <FormFactory Model="contact" />
@@ -24,7 +17,6 @@
 
     ContactMessage contact = new();
     [CascadingParameter] public NotificationService notificationService { get; set; }
-    bool showBellCommercial = false;
 
 
     async void validSubmit()

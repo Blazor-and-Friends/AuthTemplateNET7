@@ -21,8 +21,12 @@ public class AuthStateController : ControllerBase
 
         if (User.Identity.IsAuthenticated)
         {
+            Guid memberId;
+            Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out memberId);
+
             result.DisplayName = User.FindFirstValue(ClaimTypes.Name);
             result.Email = User.FindFirstValue(ClaimTypes.Email);
+            result.Id = memberId;
             result.Roles = User.FindAll(ClaimTypes.Role).Select(m => m.Value).ToArray();
         }
 

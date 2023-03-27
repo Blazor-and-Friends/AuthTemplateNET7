@@ -6,6 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace AuthTemplateNET7.Shared.Dtos.Public;
+
+//added
+
 public class JoinEmailListDto
 {
     [Required(ErrorMessage = "Enter your email address please"),

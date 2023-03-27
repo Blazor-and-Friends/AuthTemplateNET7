@@ -17,6 +17,74 @@
             <EditFormWrapper Model="emailSettings" OnValidSubmit="validSubmit" SubmitButtonText="Update email settings">
                 <FormFactory Model="emailSettings" />
             </EditFormWrapper>
+            {
+                #pragma warning disable CS0618
+            }
+            <table cellpadding="5" class="mt-5">
+                <tr>
+                    <th colspan="5">
+                        <h2 class="h4 text-decoration-underline">Accumulators</h2>
+                    </th>
+                </tr>
+                <tr>
+                    <th></th>
+                    <td></td>
+                    <td>Sent</td>
+                    <td>Max</td>
+                    <td>Available</td>
+                </tr>
+                <tr>
+                    <th>Month</th>
+                    <td class="text-end">@emailSettings.Month</td>
+                    <td class="text-end">@emailSettings.SentThisMonthCount.ToString("N0")</td>
+                    <td class="text-end">
+                        @if(emailSettings.MaxPerMonth.HasValue)
+                        {
+                            <span>@emailSettings.MaxPerMonth.Value.ToString("N0")</span>
+                        }
+                    </td>
+                    <td class="text-end">@emailSettings.AvailableMonth</td>
+                </tr>
+                <tr>
+                    <th>Day</th>
+                    <td class="text-end">@emailSettings.DayOfMonth</td>
+                    <td class="text-end">@emailSettings.SentThisDayOfMonthCount.ToString("N0")</td>
+                    <td class="text-end">
+                        @if (emailSettings.MaxPerDay.HasValue)
+                        {
+                            <span>@emailSettings.MaxPerDay.Value.ToString("N0")</span>
+                        }
+                    </td>
+                    <td class="text-end">@emailSettings.AvailableDay</td>
+                </tr>
+                <tr>
+                    <th>Hour</th>
+                    <td class="text-end">@emailSettings.Hour</td>
+                    <td class="text-end">@emailSettings.SentInLastHourCount.ToString("N0")</td>
+                    <td class="text-end">
+                        @if (emailSettings.MaxPerHour.HasValue)
+                        {
+                            <span>@emailSettings.MaxPerHour.Value.ToString("N0")</span>
+                        }
+                    </td>
+                    <td class="text-end">@emailSettings.AvailableHour</td>
+                </tr>
+                <tr>
+                    <th>Minute</th>
+                    <td class="text-end">@emailSettings.Minute</td>
+                    <td class="text-end">@emailSettings.SentInLastMinuteCount.ToString("N0")</td>
+                    <td class="text-end">
+                        @if (emailSettings.MaxPerMinute.HasValue)
+                        {
+                            <span>@emailSettings.MaxPerMinute.Value.ToString("N0")</span>
+                        }
+                    </td>
+                    <td class="text-end">@emailSettings.AvailableMinute</td>
+                </tr>
+            </table>
+            {
+                #pragma warning restore CS0618
+            }
         }
         else
         {

@@ -20,12 +20,12 @@ public class RecipientsRepo
         if (recip != null)
         {
             recip.Unsubscribed = true;
-            dataContext.Update(recip);
+            _ = dataContext.Update(recip);
         }
         else
         {
             LogItem logItem = new($"An unsubscribe attempt was made with {recipientId} from {ip}", bootstrapColor: BootstrapColor.Warning);
-            dataContext.Add(logItem);
+            _ = dataContext.Add(logItem);
         }
 
         await dataContext.TrySaveAsync($"Could not unsubscribe recipient with Id {recipientId}");

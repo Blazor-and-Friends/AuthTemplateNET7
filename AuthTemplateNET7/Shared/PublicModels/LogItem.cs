@@ -26,13 +26,13 @@ public class LogItem
     [Column(TypeName = "date")] //3 bytes
     public DateTime DeleteAfter { get; set; }
 
-    [MaxLength(256)]
+    [MaxLength(1024)]
     public string ErrorMessage { get; set; }
 
     [MaxLength(2048)]
     public string Message { get; set; }
 
-    public string StackTrace { get; set; }
+    public string StackTraceOrJson { get; set; }
 
     #region getters/notmapped/ui
 
@@ -86,8 +86,8 @@ public class LogItem
     public LogItem(Exception e, string message = null) : this(message, 180, BootstrapColor.Danger)
     {
         while (e.InnerException != null) e = e.InnerException;
-        ErrorMessage = e.Message.Shorten(256);
-        StackTrace = e.StackTrace;
+        ErrorMessage = e.Message.Shorten(1024);
+        StackTraceOrJson = e.StackTrace;
     }
 
     #endregion //ctors

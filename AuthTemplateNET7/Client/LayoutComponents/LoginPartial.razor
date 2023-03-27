@@ -7,12 +7,17 @@
     <Authorized>
         <ul class="navbar-nav">
             <li>
-                <NavLink href="membership/account" class="nav-link">@context.User.Identity.Name</NavLink>
-            </li>
-            <li>
-                <button @onclick="logout" class="btn btn-link nav-link">Log out</button>
+                <NavbarDropdownMenu LinkText="@context.User.Identity.Name">
+                    <NavbarDropdownItem @onclick="LinkClickedCallback" Href="customer/orders" LinkText="Orders" />
+                    <NavbarDropdownItem @onclick="LinkClickedCallback" Href="membership/account" LinkText="Account" />
+                    <li>
+                        <button @onclick="logout" class="btn btn-link dropdown-item">Log out</button>
+                    </li>
+                </NavbarDropdownMenu>
             </li>
         </ul>
+        <ShoppingCartIcon />
+
     </Authorized>
     <NotAuthorized>
         <ul class="navbar-nav">
@@ -29,6 +34,8 @@
 
 @code {
     //added
+
+    [EditorRequired, Parameter] public EventCallback LinkClickedCallback { get; set; }
 
     void locationChanged(object sender, LocationChangedEventArgs e)
     {

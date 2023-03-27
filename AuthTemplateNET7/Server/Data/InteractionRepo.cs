@@ -1,5 +1,4 @@
-﻿using AuthTemplateNET7.Server.Services.EmailingServices;
-using AuthTemplateNET7.Shared.Dtos.Public;
+﻿using AuthTemplateNET7.Shared.Dtos.Public;
 using AuthTemplateNET7.Shared.PublicModels;
 using AuthTemplateNET7.Shared.PublicModels.SiteSettingModels.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +24,7 @@ public class InteractionRepo
 
         createRecipientIfJoiningEmailList(model);
 
-        dataContext.Add(model);
+        _ = dataContext.Add(model);
 
         await notifyAdminIfSettingOnAsync(linkHelpers, model);
 
@@ -51,7 +50,7 @@ public class InteractionRepo
             Source = "Contact Page"
         };
 
-        dataContext.Add(recipient);
+        _ = dataContext.Add(recipient);
     }
 
     async Task notifyAdminIfSettingOnAsync(LinkHelpers linkHelpers, ContactMessage contactMessage)
@@ -74,7 +73,7 @@ public class InteractionRepo
                     sentEmail,
                     subject: "New message");
 
-                dataContext.Add(emailBatch);
+                _ = dataContext.Add(emailBatch);
             }
         }
     }
@@ -90,7 +89,7 @@ public class InteractionRepo
             //likely a bot
             LogItem logItem = new($"Looks like a bot tried to join the email list from <a href='https://www.bing.com/search?q={ip}' target='_blank'>{ip}</a>:<br /> {model.ToJson(true)}");
 
-            dataContext.Add(logItem);
+            _ = dataContext.Add(logItem);
             await dataContext.TrySaveAsync();
 
             return true;
@@ -104,7 +103,7 @@ public class InteractionRepo
             Source = model.Source.Shorten(32)
         };
 
-        dataContext.Add(recipient);
+        _ = dataContext.Add(recipient);
 
         return (await dataContext.TrySaveAsync($"Could not add email list recipient with address {emailAddress}")) > 0;
     }

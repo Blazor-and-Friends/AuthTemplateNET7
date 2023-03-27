@@ -9,12 +9,12 @@
     <div class="@positionCss">
         @foreach (var item in notices)
         {
-            <div class="@item.AlertCss @item.AlertShow" role="alert">
+            <div class="@item.AlertCss @item.AlertShow" style="max-width: 80vw; max-height: 80vh; overflow:hidden" role="alert">
 
-                <div class="d-flex gap-2 justify-content-between">
+                <div class="d-flex flex-wrap gap-2 justify-content-between">
                     <i class="@item.IconCss"></i>
 
-                    <div>
+                    <div style="max-width: 90%;">
                         @item.Message.ToMarkupString()
                     </div>
 

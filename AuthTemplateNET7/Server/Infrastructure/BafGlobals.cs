@@ -7,4 +7,13 @@ public class BafGlobals
     /// </summary>
     public string AppName { get; set; } = "AuthTemplate7";
     public DateTime AppStartTime { get; set; } = DateTime.UtcNow;
+
+    public LogStripeActivityStatus LogStripeActivityStatus { get; set; }
+}
+
+public enum LogStripeActivityStatus
+{
+    NotSet,
+    DoLog,
+    NoLog
 }

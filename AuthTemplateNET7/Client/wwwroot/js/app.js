@@ -4,7 +4,6 @@ var tf = window['tf'] = { // tf = template functions that are included
 
     focusElementById(id) {
         var el = document.getElementById(id);
-
         if (el) el.focus();
     },
 
@@ -14,6 +13,10 @@ var tf = window['tf'] = { // tf = template functions that are included
 
     getItem: function (key) { //for CookieConsent component, but can be useful elsewhere
         return localStorage.getItem(key);
+    },
+
+    removeItem: function (key) {
+        localStorage.removeItem(key);
     },
 
     scrollToElementById: function (id) {
@@ -51,8 +54,8 @@ var tf = window['tf'] = { // tf = template functions that are included
         });
     },
 
-    setItem: function (key, obj) { //for CookieConsent component, but can be useful elsewhere
-        localStorage.setItem(key, obj);
+    setItem: function (key, json) { //for CookieConsent component, shoppingcartpage, but can be useful elsewhere
+        localStorage.setItem(key, json);
     }
 };
 

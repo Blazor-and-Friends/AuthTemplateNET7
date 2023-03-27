@@ -8,8 +8,6 @@ namespace AuthTemplateNET7.Shared.CustomAttributes;
 
 //added
 
-//todo DOCS FormFactorySelectAll
-
 /// <summary>
 /// All text will be selected when user clicks on input or textarea
 /// </summary>

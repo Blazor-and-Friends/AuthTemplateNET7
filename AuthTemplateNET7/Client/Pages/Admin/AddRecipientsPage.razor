@@ -29,7 +29,7 @@
 
         if (response.IsSuccessStatusCode)
         {
-            //todo at some point focus the email input after adding https://stackoverflow.com/questions/59137973/how-to-set-the-focus-to-an-inputtext-element
+            //todo at some point focus the email input after adding. Doesn't work with the FormFactory
             recipient = new() { Source = "Added by admin" };
             notificationService.Notify($"Recipient {recipient.Address} created...");
         }

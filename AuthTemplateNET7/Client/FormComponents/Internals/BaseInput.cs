@@ -9,8 +9,6 @@ using AuthTemplateNET7.Shared.SharedServices;
 
 namespace AuthTemplateNET7.Client.FormComponents.Internals;
 
-//todo Explain how to turn this into a template in README.md
-
 //added
 public abstract class BaseInput<T> : InputBase<T>
 {

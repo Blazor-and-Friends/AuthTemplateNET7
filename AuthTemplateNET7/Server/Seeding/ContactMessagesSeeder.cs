@@ -1,5 +1,4 @@
-﻿#if DEBUG
-using AuthTemplateNET7.Shared.PublicModels;
+﻿using AuthTemplateNET7.Shared.PublicModels;
 
 namespace AuthTemplateNET7.Server.Seeding;
 
@@ -48,5 +47,3 @@ public class ContactMessagesSeeder
         dataContext.AddRange(result);
     }
 }
-
-#endif

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text;
 
 namespace AuthTemplateNET7.Server.Controllers;
 
@@ -30,7 +31,6 @@ public class ScheduledController : ControllerBase
 #pragma warning restore CS0649
     DateTime utcNow = DateTime.UtcNow;
 
-    //todo DOCS a settings table in the db with a setting for turning on/off all aspects of this controller (i.e. the whole thing off, deleting old logitems, old logins. Use that fancy json field in ef 7. This needs to be in a settings table so that the dev can turn off any aspect of the application that is throwing an exception even when s/he's not in front of his/her dev box
     public ScheduledController(EmailBatchRepo emailBatchRepo, IConfiguration configuration, DataContext dataContext)
     {
         this.dataContext = dataContext;
@@ -46,7 +46,7 @@ public class ScheduledController : ControllerBase
 
         if (guid == null || guid != expectedGuid) return BadRequest("Guid must match");
 
-        //todo DOCS change the ScheduledController.Hourly guid and delete this line
+        //todo DOCS ON_NEW_SOLUTION change the ScheduledController.Hourly guid and delete this line
         if (guid == "change-this-string-to-something-unique") return BadRequest("Guid not changed in appsettings.json");
 
         var settings = await dataContext.SiteSettings
@@ -99,7 +99,7 @@ public class ScheduledController : ControllerBase
             if (devSettings.LogMaintenanceActivity && rows > 0)
             {
                 LogItem logItem = new($"Deleted {rows} Contact Message(s)", deleteAfterDays: 8);
-                dataContext.Add(logItem);
+                _ = dataContext.Add(logItem);
                 saveChanges = true;
             }
 #endif
@@ -110,17 +110,33 @@ public class ScheduledController : ControllerBase
     {
         if(utcNow.DayOfWeek == DayOfWeek.Monday && utcNow.Hour == 4)
         {
-            //https://learn.microsoft.com/en-us/ef/core/what-is-new/ef-core-7.0/whatsnew#executeupdate-and-executedelete-bulk-updates
 
-            //needs to be wrapped because UseInMemoryDatabase doesn't support relational queries
 #if !DEBUG
-            var rows = await dataContext.EmailBatches.Where(m => m.DeleteAfter < utcNow).ExecuteDeleteAsync();
+            //have to delete child entities before deleting parent
+            var oldBatchIds = await dataContext.Batches
+                .Where(m => m.DeleteAfter < utcNow)
+                .Select(m => m.Id)
+                .ToArrayAsync();
 
-            if(devSettings.LogMaintenanceActivity && rows > 0)
+            if (oldBatchIds.Length > 0)
             {
-                LogItem logItem = new($"{rows} email batch(es) deleted", deleteAfterDays: 8);
-                dataContext.Add(logItem);
-                saveChanges = true;
+                StringBuilder sb = new($"DELETE FROM dbo.Emails WHERE condition BatchId = {oldBatchIds[0]}");
+
+                for (int i = 1; i < oldBatchIds.Length; i++)
+                {
+                    sb.Append($" OR BatchId = {oldBatchIds[i]}");
+                }
+
+                await dataContext.Database.ExecuteSqlRawAsync(sb.ToString());
+
+                var rows = await dataContext.Batches.Where(m => m.DeleteAfter < utcNow).ExecuteDeleteAsync();
+
+                if (devSettings.LogMaintenanceActivity && rows > 0)
+                {
+                    LogItem logItem = new($"{rows} email batch(es) deleted", deleteAfterDays: 8);
+                    _ = dataContext.Add(logItem);
+                    saveChanges = true;
+                }
             }
 #endif
         }
@@ -140,7 +156,7 @@ public class ScheduledController : ControllerBase
             if(devSettings.LogMaintenanceActivity && rows > 0)
             {
                 LogItem logItem = new($"Deleted {rows} login(s)", 8);
-                dataContext.Add(logItem);
+                _ = dataContext.Add(logItem);
                 saveChanges = true;
             }
 #endif
@@ -160,7 +176,7 @@ public class ScheduledController : ControllerBase
             if (devSettings.LogMaintenanceActivity && rows > 0)
             {
                 LogItem logItem = new($"{rows} log item(s) deleted", 8);
-                dataContext.LogItems.Add(logItem);
+                _ = dataContext.LogItems.Add(logItem);
                 saveChanges = true;
             }
 #endif

@@ -1,5 +1,4 @@
-﻿#if DEBUG
-using AuthTemplateNET7.Shared;
+﻿using AuthTemplateNET7.Shared;
 using AuthTemplateNET7.Shared.PublicModels;
 
 namespace AuthTemplateNET7.Server.Seeding;
@@ -103,4 +102,3 @@ public class EmailBatchSeeder
         return result;
     }
 }
-#endif

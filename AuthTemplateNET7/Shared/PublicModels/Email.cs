@@ -10,8 +10,7 @@ public class Email
 
     public int Id { get; set; }
 
-    public int EmailBatchId { get; set; }
-    public Batch EmailBatch { get; set; }
+    public int BatchId { get; set; }
 
     public Guid? RecipientId { get; set; }
 

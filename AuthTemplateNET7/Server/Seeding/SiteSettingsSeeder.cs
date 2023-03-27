@@ -25,7 +25,7 @@ public class SiteSettingsSeeder
         AdminSettings adminSettings = new();
 
         SiteSetting siteSetting = new(AdminSettings.Key, RoleLevel.Admin, adminSettings);
-        dataContext.Add(siteSetting);
+        _ = dataContext.Add(siteSetting);
     }
 
     void createDevSettings()
@@ -33,7 +33,7 @@ public class SiteSettingsSeeder
         DevSettings devSettings = new();
 
         SiteSetting siteSetting = new(DevSettings.Key, RoleLevel.Dev, devSettings);
-        dataContext.Add(siteSetting);
+        _ = dataContext.Add(siteSetting);
     }
 
     void createEmailSettings()
@@ -46,6 +46,6 @@ public class SiteSettingsSeeder
         };
 
         SiteSetting setting = new(EmailSettings.Key, RoleLevel.Dev, emailSettings);
-        dataContext.Add(setting);
+        _ = dataContext.Add(setting);
     }
 }

@@ -29,7 +29,7 @@
                         <th title="Select/Deselect all" class="border-bottom border-primary">
                             <input type="checkbox" @onchange="selectDeselectAllChanged" />
                         </th>
-                        <th>ST</th>
+                        <th>ST/JSON</th>
                         <th class="border-bottom border-primary">Date<br />(Delete after)</th>
                         <th class="border-bottom border-primary">Message</th>
                         <th class="border-bottom border-primary">Error message</th>
@@ -42,10 +42,10 @@
                             <td>
                                 <input type="checkbox" @bind="@item.Selected" title="Select for deleting OR saving" />
                             </td>
-                            <td title="STACK TRACE: @item.StackTrace">
+                            <td title="Show/hide StackTrace/JSON">
                                 <button
                                     @onclick="() => item.ShowStackTrace = !item.ShowStackTrace"
-                                    class="btn @(item.StackTrace == null ? "btn-outline-info" : "btn-info")">
+                                    class="btn @(item.StackTraceOrJson == null ? "btn-outline-info" : "btn-info")">
                                     <i class="bi @(item.ShowStackTrace ? "bi-eye-slash" : "bi-eye")"></i>
                                 </button>
                             </td>
@@ -63,7 +63,7 @@
                         {
                             <tr>
                                 <td colspan="5">
-                                    <pre class="ms-3" style="white-space: pre-wrap;">@item.StackTrace</pre>
+                                    <pre class="ms-3 white-space-pre-wrap">@item.StackTraceOrJson</pre>
                                 </td>
                             </tr>
                         }

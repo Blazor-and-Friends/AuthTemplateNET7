@@ -141,9 +141,9 @@
 
     async Task validSubmit()
     {
-        submitButton.Disable();
+        if(submitButton != null) submitButton.Disable();
         await OnValidSubmit.InvokeAsync();
-        submitButton.Enable();
+        if (submitButton != null) submitButton.Enable();
         StateHasChanged();
     }
 

@@ -4,6 +4,7 @@ using AuthTemplateNET7.Shared.PublicModels;
 using AuthTemplateNET7.Shared.PublicModels.SiteSettingModels.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace AuthTemplateNET7.Server.Controllers;
 
@@ -65,7 +66,12 @@ public class AdminController : ControllerBase
     {
         //todo at some point prolly should use a dto for EmailBatches so we don't send out the Body for no reason
 
-        return Ok(await adminRepo.GetEmailBatchesAsync());
+        bool isDev = User.FindAll(ClaimTypes.Role)
+            .Select(m => m.Value)
+            .ToArray()
+            .Contains("Dev");
+
+        return Ok(await adminRepo.GetEmailBatchesAsync(isDev));
     }
 
     [HttpGet("get-emails-for-batch/{id}")]
